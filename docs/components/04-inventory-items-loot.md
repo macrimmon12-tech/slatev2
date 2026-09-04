@@ -315,6 +315,7 @@ You own, exclusively:
   registry namespaces per CONTRACTS.md §4).
 - `data/affixes/`
 - `data/items/sets/`
+- `data/items/legendary/`
 - `data/config/loot_tables.json` (floor-loot pool + density config, §5.7)
 
 You add entries to:
