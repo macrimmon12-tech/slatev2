@@ -1,0 +1,25 @@
+[project]
+name = "slatev2"
+version = "0.1.0"
+description = "SLATE v2 — a tile-based roguelike (engine + content editor)."
+requires-python = ">=3.11"
+dependencies = [
+    "simpleeval>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["engine*"]
