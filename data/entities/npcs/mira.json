@@ -1,0 +1,9 @@
+{
+  "id": "mira",
+  "display_name": "Mira",
+  "sprite_ref": "npc_mira.png",
+  "interactable": {
+    "kind": "npc",
+    "dialog_id": "shopkeeper_mira_dialog"
+  }
+}
