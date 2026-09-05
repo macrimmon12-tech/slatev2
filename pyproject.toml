@@ -6,15 +6,17 @@ requires-python = ">=3.11"
 dependencies = [
     "simpleeval>=1.0.0",
     # Added by 07-input-renderer-audio.md: pygame-ce is a hard runtime
-    # dependency of engine/input, engine/render, engine/audio (and will be
-    # for 08-ui-runtime.md/09-animation-vfx.md too). pyproject.toml is
-    # nominally 00-foundation-core.md's exclusive file (CONTRACTS.md §1),
-    # but there is no other documented extension point for a Wave-1
-    # component's third-party dependency, and "pytest green" (CONTRACTS.md
-    # §9/component doc §8) is not achievable without it -- flagged in this
-    # component's PR as a CONTRACTS.md ownership gap (dependencies arguably
-    # deserve the same "shared, additive-only" treatment as
-    # _COMPONENT_REGISTRY) rather than resolved by skipping the dependency.
+    # dependency of engine/input, engine/render, engine/audio (and 08's
+    # ui_runtime/09's anim_system, both of which independently added the
+    # same line before landing on this shared dependency instead).
+    # pyproject.toml is nominally 00-foundation-core.md's exclusive file
+    # (CONTRACTS.md §1), but there is no other documented extension point
+    # for a Wave-1 component's third-party dependency, and "pytest green"
+    # (CONTRACTS.md §9/component doc §8) is not achievable without it --
+    # flagged in each component's PR as a CONTRACTS.md ownership gap
+    # (dependencies arguably deserve the same "shared, additive-only"
+    # treatment as _COMPONENT_REGISTRY) rather than resolved by skipping
+    # the dependency.
     "pygame-ce>=2.5.0",
 ]
 

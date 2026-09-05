@@ -1,0 +1,36 @@
+[
+  {
+    "event_type": "entity_moved",
+    "payload": {"entity_id": 1, "from": [5, 5], "to": [6, 5]}
+  },
+  {
+    "event_type": "entity_moved",
+    "payload": {"entity_id": 2, "from": [7, 5], "to": [7, 5]}
+  },
+  {
+    "event_type": "damage_dealt",
+    "payload": {
+      "target_id": 2,
+      "amount": 12,
+      "damage_type": "fire",
+      "source_id": 1,
+      "position": [7, 5]
+    }
+  },
+  {
+    "event_type": "miss",
+    "payload": {"attacker_id": 1, "defender_id": 2}
+  },
+  {
+    "event_type": "status_applied",
+    "payload": {"entity_id": 2, "effect_id": "poison", "instance_id": "poison-1", "duration": 4}
+  },
+  {
+    "event_type": "status_expired",
+    "payload": {"entity_id": 2, "effect_id": "poison", "instance_id": "poison-1"}
+  },
+  {
+    "event_type": "vfx_play",
+    "payload": {"vfx_id": "fireball", "position": [10, 10], "data": {}}
+  }
+]
