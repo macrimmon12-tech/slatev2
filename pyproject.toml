@@ -5,6 +5,7 @@ description = "SLATE v2 — a tile-based roguelike (engine + content editor)."
 requires-python = ">=3.11"
 dependencies = [
     "simpleeval>=1.0.0",
+    "pygame-ce>=2.5.0",
 ]
 
 [project.optional-dependencies]
