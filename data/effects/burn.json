@@ -1,0 +1,8 @@
+{
+  "id": "burn",
+  "name": "Burn",
+  "damage_type": "fire",
+  "tick_effects": [
+    {"type": "damage", "amount": "1d4", "damage_type": "fire"}
+  ]
+}

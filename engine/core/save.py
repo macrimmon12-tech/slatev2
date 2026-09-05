@@ -27,14 +27,37 @@ from engine.core.ecs import World, is_component
 from engine.systems.spells import SpellCasterComponent
 from engine.systems.status import StatusEffectsComponent
 
+# Component classes from other components, imported here solely to populate
+# _COMPONENT_REGISTRY below. Alphabetical by component name, one import per
+# line, so each new component's PR adds exactly one line here and one entry
+# to the dict — the same low-conflict shape as the registry itself. This
+# file is the one documented, shared exception to "don't import another
+# component's module": every component's own module stays the source of
+# truth for its component classes, this dict just points at them so
+# save/load can find them by name.
+#
+# PlayerTagComponent/PositionComponent were independently introduced by
+# 02-ai-system.md (engine/systems/ai.py) to fill the same "no player-id
+# convention, no PositionComponent owner" gap 01-stats-combat.md also hit —
+# ai.py's versions are the ones registered here since 02 merged first;
+# engine/systems/combat.py and effects.py import them from ai.py rather
+# than keeping a second, incompatible definition around.
+from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent
+from engine.systems.progression import XpComponent
+from engine.systems.stats import StatsComponent
+
 logger = logging.getLogger(__name__)
 
-# name -> component class. Additive-only, alphabetical by component name.
 # Each Wave 1+ component adds its own entries here in the same PR that
 # introduces the dataclass (CONTRACTS.md §2 rule 3).
 _COMPONENT_REGISTRY: dict[str, type] = {
+    "AIComponent": AIComponent,
+    "PlayerTagComponent": PlayerTagComponent,
+    "PositionComponent": PositionComponent,
     "SpellCasterComponent": SpellCasterComponent,
+    "StatsComponent": StatsComponent,
     "StatusEffectsComponent": StatusEffectsComponent,
+    "XpComponent": XpComponent,
 }
 
 _warned_unregistered: set[str] = set()

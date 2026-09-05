@@ -1,0 +1,7 @@
+{
+  "id": "regeneration",
+  "name": "Regeneration",
+  "tick_effects": [
+    {"type": "restore_hp", "amount": "1d4"}
+  ]
+}
