@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "categories": ["trigger", "condition", "action", "reward", "narrative", "ui", "world"],
+  "snippets": [
+    {
+      "id": "trigger_on_enter_room",
+      "category": "trigger",
+      "label": "On Enter Room",
+      "description": "Fires when the player enters a tagged room.",
+      "params": [
+        {"name": "room_tag", "type": "string", "default": ""}
+      ],
+      "lua_template": "-- @node id=\"{id}\" type=\"trigger:trigger_on_enter_room\" x={x} y={y}\n-- @params room_tag=\"{room_tag}\"\nengine.subscribe(\"player_moved\", function(payload)\n  local tile = engine.get_tile(payload.to.x, payload.to.y)\n  if tile and tile.room_tag == \"{room_tag}\" then\n    -- node body continues below\n  end\nend)\n-- @endnode"
+    },
+    {
+      "id": "action_grant_item",
+      "category": "action",
+      "label": "Grant Item",
+      "description": "Grants an item to the triggering entity.",
+      "params": [
+        {"name": "item_id", "type": "string", "default": ""},
+        {"name": "quantity", "type": "number", "default": 1}
+      ],
+      "lua_template": "-- @node id=\"{id}\" type=\"action:action_grant_item\" x={x} y={y}\n-- @params item_id=\"{item_id}\" quantity={quantity}\nengine.grant_item(actor_id, \"{item_id}\", {quantity})\n-- @endnode"
+    }
+  ]
+}
