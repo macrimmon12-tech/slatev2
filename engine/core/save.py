@@ -27,9 +27,12 @@ from engine.core.ecs import World, is_component
 
 # Each Wave 1 component imports its own component dataclasses here and adds
 # them to _COMPONENT_REGISTRY below, in the same PR that introduces them
-# (CONTRACTS.md §2 rule 3). This is the one place `engine/core` reaches
-# into `engine/systems` — an intentional exception to the usual layering,
-# since the registry has to hold real class objects, not just names.
+# (CONTRACTS.md §2 rule 3) — this file is the one documented, shared
+# exception to "don't import another component's module": every
+# component's own module stays the source of truth for its component
+# classes, this dict just points at them so save/load can find them by
+# name.
+from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent  # noqa: E402
 from engine.systems.inventory import (  # noqa: E402
     InventoryComponent,
     ItemInstanceComponent,
@@ -43,11 +46,14 @@ logger = logging.getLogger(__name__)
 # Each Wave 1 component adds its own entries here in the same PR that
 # introduces the dataclass (CONTRACTS.md §2 rule 3).
 _COMPONENT_REGISTRY: dict[str, type] = {
+    "AIComponent": AIComponent,
     "FloorTileComponent": FloorTileComponent,
     "GoldComponent": GoldComponent,
     "InventoryComponent": InventoryComponent,
     "ItemInstanceComponent": ItemInstanceComponent,
     "ItemPositionComponent": ItemPositionComponent,
+    "PlayerTagComponent": PlayerTagComponent,
+    "PositionComponent": PositionComponent,
 }
 
 _warned_unregistered: set[str] = set()

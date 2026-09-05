@@ -1,0 +1,22 @@
+{
+  "id": "goblin_shaman",
+  "display_name": "Goblin Shaman",
+  "stats": {"hp": 40, "max_hp": 40, "strength": 5, "dexterity": 6, "vision_range": 6},
+  "ai": {
+    "behavior": "chaser",
+    "state": "asleep",
+    "aggro_range": 8,
+    "wake_radius": 5,
+    "flee_hp_threshold": 0.2,
+    "can_cast_while_fleeing": true,
+    "patrol_points": [],
+    "spells": ["firebolt", "minor_heal_self"],
+    "behavior_phases": [
+      {"trigger": {"type": "hp_below", "value": 0.5}, "behavior": "coward", "one_shot": true},
+      {"trigger": {"type": "turn_count_above", "value": 20}, "behavior": "chaser", "one_shot": false}
+    ]
+  },
+  "xp_value": 25,
+  "noise_radius": 4,
+  "loot_table": {"entries": []}
+}
