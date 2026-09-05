@@ -1,0 +1,12 @@
+{
+  "type": "List",
+  "id": "list1",
+  "items_key": "items",
+  "rect": { "x": 0, "y": 0, "w": 200, "h": 100 },
+  "item_template": {
+    "type": "Button",
+    "text": "{{item.name}}",
+    "rect": { "x": 0, "y": 0, "w": 200, "h": 20 },
+    "on_click": { "event": "item_clicked", "payload": { "id": "{{item.id}}" } }
+  }
+}

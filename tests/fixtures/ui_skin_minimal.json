@@ -1,0 +1,13 @@
+{
+  "type": "Panel",
+  "id": "minimal",
+  "rect": { "x": 0, "y": 0, "w": 100, "h": 50 },
+  "children": [
+    {
+      "type": "Label",
+      "id": "minimal_label",
+      "text": "Hello",
+      "rect": { "x": 0, "y": 0, "w": 100, "h": 20 }
+    }
+  ]
+}
