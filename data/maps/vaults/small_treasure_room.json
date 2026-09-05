@@ -1,0 +1,19 @@
+{
+  "id": "small_treasure_room",
+  "display_name": "Small Treasure Room",
+  "min_depth": 1,
+  "max_depth": 20,
+  "width": 5,
+  "height": 5,
+  "tiles": [
+    "#####",
+    "#...#",
+    "#...#",
+    "#...#",
+    "#####"
+  ],
+  "entity_spawns": [],
+  "loot_spawns": [
+    {"item_id": "gold_pile", "x": 2, "y": 2}
+  ]
+}

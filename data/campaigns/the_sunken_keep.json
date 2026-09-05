@@ -1,0 +1,39 @@
+{
+  "id": "the_sunken_keep",
+  "display_name": "The Sunken Keep",
+  "levels": [
+    {
+      "id": "keep_l1",
+      "depth": 1,
+      "is_hub": false,
+      "width": 60,
+      "height": 40,
+      "monster_spawns": [
+        {"entity_id": "goblin", "count": [4, 7]},
+        {"entity_id": "goblin_shaman", "count": [0, 1]}
+      ],
+      "vaults": [
+        {"vault_id": "goblin_shrine", "guaranteed": true},
+        {"vault_id": "small_treasure_room", "weight": 5}
+      ]
+    },
+    {
+      "id": "keep_hub",
+      "depth": 1,
+      "is_hub": true,
+      "width": 30,
+      "height": 20,
+      "monster_spawns": [],
+      "vaults": []
+    },
+    {
+      "id": "keep_l10_vault_special",
+      "depth": 10,
+      "is_hub": false,
+      "width": 50,
+      "height": 50,
+      "monster_spawns": [{"entity_id": "keep_boss", "count": [1, 1]}],
+      "vaults": [{"vault_id": "boss_arena", "guaranteed": true}]
+    }
+  ]
+}
