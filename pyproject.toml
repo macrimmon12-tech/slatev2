@@ -18,6 +18,14 @@ dependencies = [
     # treatment as _COMPONENT_REGISTRY) rather than resolved by skipping
     # the dependency.
     "pygame-ce>=2.5.0",
+    # Added by 10-lua-scripting-layer.md: `lupa` (embedded Lua via
+    # LuaRuntime) is a hard runtime dependency of engine/lua/lua_host.py,
+    # and engine/core/save.py imports LuaFloorStateComponent/
+    # LuaCampaignStateComponent from it for _COMPONENT_REGISTRY. Same
+    # ownership-gap flag as pygame-ce above: pyproject.toml is nominally
+    # foundation-owned, but there's no other extension point for a Wave-1
+    # component's third-party dependency.
+    "lupa>=2.0",
 ]
 
 [project.optional-dependencies]
