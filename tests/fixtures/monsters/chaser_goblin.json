@@ -1,0 +1,19 @@
+{
+  "id": "chaser_goblin",
+  "display_name": "Goblin Raider",
+  "stats": {"hp": 12, "max_hp": 12, "strength": 6, "dexterity": 5, "vision_range": 6},
+  "ai": {
+    "behavior": "chaser",
+    "state": "asleep",
+    "aggro_range": 8,
+    "wake_radius": 5,
+    "flee_hp_threshold": 0.2,
+    "can_cast_while_fleeing": false,
+    "patrol_points": [],
+    "spells": [],
+    "behavior_phases": []
+  },
+  "xp_value": 10,
+  "noise_radius": 3,
+  "loot_table": {"entries": []}
+}

@@ -28,10 +28,19 @@ from engine.core.ecs import World, is_component
 logger = logging.getLogger(__name__)
 
 # name -> component class. Additive-only, alphabetical by component name.
-# Empty at the foundation layer — no gameplay components exist yet; each
-# Wave 1 component adds its own entries here in the same PR that introduces
-# the dataclass (CONTRACTS.md §2 rule 3).
-_COMPONENT_REGISTRY: dict[str, type] = {}
+# Each Wave 1 component adds its own entries here in the same PR that
+# introduces the dataclass (CONTRACTS.md §2 rule 3) — this file is the one
+# documented, shared exception to "don't import another component's
+# module": every component's own module stays the source of truth for its
+# component classes, this dict just points at them so save/load can find
+# them by name.
+from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent  # noqa: E402
+
+_COMPONENT_REGISTRY: dict[str, type] = {
+    "AIComponent": AIComponent,
+    "PlayerTagComponent": PlayerTagComponent,
+    "PositionComponent": PositionComponent,
+}
 
 _warned_unregistered: set[str] = set()
 
