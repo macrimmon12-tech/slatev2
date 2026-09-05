@@ -1,0 +1,12 @@
+{
+  "id": "piece_legs",
+  "display_name": "Test Set Greaves",
+  "item_type": "armor",
+  "equippable": true,
+  "slot": "legs",
+  "min_depth": 1,
+  "max_depth": 20,
+  "set_id": "testset",
+  "consumable": false,
+  "stat_modifiers": []
+}

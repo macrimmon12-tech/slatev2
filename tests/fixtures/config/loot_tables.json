@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "rarity_interpolation": {
+    "t_0": {"common": 70, "uncommon": 20, "rare": 8, "epic": 2, "legendary": 0},
+    "t_1": {"common": 10, "uncommon": 20, "rare": 30, "epic": 30, "legendary": 10}
+  },
+  "floor_loot": {
+    "items_per_room_min": 1,
+    "items_per_room_max": 1,
+    "eligible_item_pool": "all",
+    "gold_pile_weight": 0,
+    "gold_amount_formula": "2d10"
+  },
+  "legendary_drop_chance": 0.05
+}

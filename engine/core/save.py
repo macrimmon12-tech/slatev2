@@ -25,13 +25,30 @@ from typing import Any, Iterable
 
 from engine.core.ecs import World, is_component
 
+# Each Wave 1 component imports its own component dataclasses here and adds
+# them to _COMPONENT_REGISTRY below, in the same PR that introduces them
+# (CONTRACTS.md §2 rule 3). This is the one place `engine/core` reaches
+# into `engine/systems` — an intentional exception to the usual layering,
+# since the registry has to hold real class objects, not just names.
+from engine.systems.inventory import (  # noqa: E402
+    InventoryComponent,
+    ItemInstanceComponent,
+    ItemPositionComponent,
+)
+from engine.systems.loot import FloorTileComponent, GoldComponent  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 # name -> component class. Additive-only, alphabetical by component name.
-# Empty at the foundation layer — no gameplay components exist yet; each
-# Wave 1 component adds its own entries here in the same PR that introduces
-# the dataclass (CONTRACTS.md §2 rule 3).
-_COMPONENT_REGISTRY: dict[str, type] = {}
+# Each Wave 1 component adds its own entries here in the same PR that
+# introduces the dataclass (CONTRACTS.md §2 rule 3).
+_COMPONENT_REGISTRY: dict[str, type] = {
+    "FloorTileComponent": FloorTileComponent,
+    "GoldComponent": GoldComponent,
+    "InventoryComponent": InventoryComponent,
+    "ItemInstanceComponent": ItemInstanceComponent,
+    "ItemPositionComponent": ItemPositionComponent,
+}
 
 _warned_unregistered: set[str] = set()
 

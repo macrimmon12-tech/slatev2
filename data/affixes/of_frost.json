@@ -1,0 +1,11 @@
+{
+  "id": "affix_of_frost",
+  "display_name": "of Frost",
+  "cost": 4,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": ["elemental_affix"],
+  "stat_modifiers": [
+    {"stat": "cold_damage_bonus", "operation": "add", "value": 3}
+  ]
+}

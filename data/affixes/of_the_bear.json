@@ -1,0 +1,11 @@
+{
+  "id": "affix_of_the_bear",
+  "display_name": "of the Bear",
+  "cost": 3,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": ["strength_affix"],
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 4}
+  ]
+}

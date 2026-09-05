@@ -1,0 +1,15 @@
+{
+  "id": "tarnished_ring",
+  "display_name": "Tarnished Ring",
+  "item_type": "ring",
+  "equippable": true,
+  "slot": "ring",
+  "min_depth": 3,
+  "max_depth": 20,
+  "set_id": null,
+  "consumable": false,
+  "cursed_chance": 0.35,
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 6}
+  ]
+}

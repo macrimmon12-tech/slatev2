@@ -1,0 +1,12 @@
+{
+  "id": "affix_of_the_ox",
+  "display_name": "of the Ox",
+  "cost": 6,
+  "min_depth": 5,
+  "max_depth": 20,
+  "conflict_tags": ["strength_affix"],
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 9},
+    {"stat": "max_hp", "operation": "add", "value": 10}
+  ]
+}

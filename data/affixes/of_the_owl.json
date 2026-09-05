@@ -1,0 +1,11 @@
+{
+  "id": "affix_of_the_owl",
+  "display_name": "of the Owl",
+  "cost": 1,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": [],
+  "stat_modifiers": [
+    {"stat": "dexterity", "operation": "add", "value": 1}
+  ]
+}

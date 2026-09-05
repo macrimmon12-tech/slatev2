@@ -1,0 +1,11 @@
+{
+  "id": "affix_tiny",
+  "display_name": "Tiny Affix",
+  "cost": 3,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": [],
+  "stat_modifiers": [
+    {"stat": "dexterity", "operation": "add", "value": 1}
+  ]
+}

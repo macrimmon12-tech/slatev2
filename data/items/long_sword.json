@@ -1,0 +1,15 @@
+{
+  "id": "long_sword",
+  "display_name": "Long Sword",
+  "item_type": "weapon",
+  "equippable": true,
+  "slot": "main_hand",
+  "min_depth": 1,
+  "max_depth": 12,
+  "set_id": null,
+  "consumable": false,
+  "stat_modifiers": [
+    {"stat": "damage_min", "operation": "add", "value": 3},
+    {"stat": "damage_max", "operation": "add", "value": 8}
+  ]
+}

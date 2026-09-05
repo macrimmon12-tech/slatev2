@@ -1,0 +1,21 @@
+{
+  "id": "ironclad_set",
+  "display_name": "Ironclad",
+  "tiers": [
+    {
+      "tier": 2,
+      "pieces_required": 2,
+      "stat_modifiers": [
+        {"stat": "armor", "operation": "add", "value": 4}
+      ]
+    },
+    {
+      "tier": 4,
+      "pieces_required": 4,
+      "stat_modifiers": [
+        {"stat": "armor", "operation": "add", "value": 12},
+        {"stat": "strength", "operation": "add", "value": 5}
+      ]
+    }
+  ]
+}

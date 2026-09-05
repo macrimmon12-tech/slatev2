@@ -1,0 +1,11 @@
+{
+  "id": "affix_of_flames",
+  "display_name": "of Flames",
+  "cost": 4,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": ["elemental_affix"],
+  "stat_modifiers": [
+    {"stat": "fire_damage_bonus", "operation": "add", "value": 3}
+  ]
+}

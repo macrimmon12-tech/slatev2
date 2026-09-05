@@ -1,0 +1,14 @@
+{
+  "id": "ironclad_boots",
+  "display_name": "Ironclad Boots",
+  "item_type": "armor",
+  "equippable": true,
+  "slot": "feet",
+  "min_depth": 5,
+  "max_depth": 20,
+  "set_id": "ironclad_set",
+  "consumable": false,
+  "stat_modifiers": [
+    {"stat": "dexterity", "operation": "add", "value": 1}
+  ]
+}

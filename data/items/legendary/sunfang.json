@@ -1,0 +1,13 @@
+{
+  "id": "sunfang",
+  "display_name": "Sunfang",
+  "item_type": "weapon",
+  "equippable": true,
+  "slot": "main_hand",
+  "min_depth": 8,
+  "stat_modifiers": [
+    {"stat": "damage_min", "operation": "add", "value": 10},
+    {"stat": "damage_max", "operation": "add", "value": 20},
+    {"stat": "fire_damage_bonus", "operation": "multiply", "value": 1.25}
+  ]
+}
