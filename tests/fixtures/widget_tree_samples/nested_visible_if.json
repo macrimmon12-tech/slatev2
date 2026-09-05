@@ -1,0 +1,14 @@
+{
+  "type": "Panel",
+  "id": "cond_panel",
+  "rect": { "x": 0, "y": 0, "w": 100, "h": 100 },
+  "children": [
+    {
+      "type": "Label",
+      "id": "conditional_label",
+      "text": "Shown",
+      "rect": { "x": 0, "y": 0, "w": 100, "h": 20 },
+      "visible_if": { "data_key": "show_label", "equals": true }
+    }
+  ]
+}

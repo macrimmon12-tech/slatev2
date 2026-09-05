@@ -1,0 +1,7 @@
+{
+  "type": "Panel",
+  "id": "centered_panel",
+  "rect": { "x": "center", "y": "center", "w": 200, "h": 100 },
+  "background": "panel_bg",
+  "children": []
+}
