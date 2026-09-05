@@ -234,35 +234,68 @@ def test_handle_potential_death_monster_defaults_xp_and_loot_without_lookup():
 # ---------------------------------------------------------------------------
 
 
-def test_process_monster_turns_is_a_noop_without_ai_system():
+def test_process_monster_turns_is_a_noop_if_ai_system_unavailable(monkeypatch):
+    """Regression guard for the documented CONTRACTS.md §8 stubbing
+    fallback -- engine.systems.ai is merged in this repo now, so this test
+    forces the ImportError branch via sys.modules rather than relying on
+    the dependency's absence."""
+    import sys
+
     world = World()
     bus = EventBus()
     _make_entity(world, {"hp": 10})
+    monkeypatch.setitem(sys.modules, "engine.systems.ai", None)  # forces ImportError on import
 
     combat.process_monster_turns(world, bus)  # must not raise
 
 
-def test_process_monster_turns_calls_ai_in_ascending_entity_id_order(monkeypatch):
-    import sys
-    import types
+def test_process_monster_turns_calls_real_ai_system_for_awake_monsters_in_ascending_order():
+    """Drives the real, now-merged 02-ai-system.md AISystem end-to-end
+    (CONTRACTS.md §8: once a stubbed dependency merges, integrate against
+    the real thing) rather than a hand-rolled fake module."""
+    from engine.systems.ai import AIComponent
 
     world = World()
     bus = EventBus()
-    monster_c = _make_entity(world, {"hp": 10})
-    monster_a = _make_entity(world, {"hp": 10})
-    monster_b = _make_entity(world, {"hp": 10})
+
+    def make_monster(awake: bool) -> int:
+        entity_id = _make_entity(world, {"hp": 10})
+        world.add_component(
+            entity_id, AIComponent(behavior="patroller", state="awake" if awake else "asleep")
+        )
+        return entity_id
+
+    monster_c = make_monster(awake=True)
+    monster_a = make_monster(awake=True)
+    asleep_monster = make_monster(awake=False)
     player = _make_entity(world, {"hp": 10})
     world.add_component(player, combat.PlayerTagComponent())
 
     call_order = []
-    fake_ai_module = types.ModuleType("engine.systems.ai")
-    fake_ai_module.take_turn = lambda entity_id, w, eb: call_order.append(entity_id)
-    monkeypatch.setitem(sys.modules, "engine.systems.ai", fake_ai_module)
+    ai_system = combat._get_ai_system(world, bus)
+    ai_system.take_turn = lambda entity_id, w, eb: call_order.append(entity_id)
 
     combat.process_monster_turns(world, bus)
 
-    assert call_order == sorted([monster_a, monster_b, monster_c])
+    assert call_order == sorted([monster_a, monster_c])
+    assert asleep_monster not in call_order
     assert player not in call_order
+
+
+def test_process_monster_turns_reuses_one_ai_system_instance_per_world():
+    """AISystem.__init__ subscribes handlers onto the event bus -- calling
+    process_monster_turns repeatedly must not construct (and re-subscribe)
+    a fresh instance each time."""
+    world = World()
+    bus = EventBus()
+    _make_entity(world, {"hp": 10})
+
+    combat.process_monster_turns(world, bus)
+    first = combat._get_ai_system(world, bus)
+    combat.process_monster_turns(world, bus)
+    second = combat._get_ai_system(world, bus)
+
+    assert first is second
 
 
 # ---------------------------------------------------------------------------

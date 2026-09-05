@@ -1,3 +1,2 @@
-"""Gameplay systems. Each module here is owned by exactly one component doc
-under docs/components/ — see CONTRACTS.md §1 for the file->component map.
-"""
+"""Gameplay systems. One module per system (CONTRACTS.md §1) — each Wave 1+
+component adds its own module here without touching another's."""

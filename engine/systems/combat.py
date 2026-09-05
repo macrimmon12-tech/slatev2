@@ -22,42 +22,46 @@ definition directly:
 
 Both follow the same "absence = zero cost" shape as the depth-accessor
 default in 01-stats-combat.md §5.3/§9.
+
+``PlayerTagComponent`` used to be defined here too (01 hit the exact same
+"no player-id convention anywhere" gap 02-ai-system.md's own module
+docstring documents hitting independently). Since 02 merged first, its
+``engine.systems.ai.PlayerTagComponent`` is the one registered in
+``_COMPONENT_REGISTRY`` — importing it here rather than keeping a second,
+incompatible empty-marker class around. Re-exported as
+``combat.PlayerTagComponent`` so existing call sites/tests don't need to
+know which module it actually lives in.
 """
 
 from __future__ import annotations
 
 import logging
 import random
-from dataclasses import dataclass
+import weakref
 from typing import Callable
 
-from engine.core.ecs import World, component
+from engine.core.ecs import World
 from engine.core.events import EventBus
 from engine.core.formula import eval_formula
 from engine.systems import effects
+from engine.systems.ai import PlayerTagComponent  # re-exported, see module docstring
 from engine.systems.stats import StatsComponent, StatsSystem
 
 logger = logging.getLogger(__name__)
 
 Position = tuple[int, int]
 
-
-@component
-@dataclass
-class PlayerTagComponent:
-    """Marks the player entity.
-
-    01-stats-combat.md §2.3 refers to "the foundation's player-id
-    convention" for distinguishing player vs. monster death handling, but
-    no such convention exists anywhere in the merged codebase --
-    00-foundation-core.md never defines one, and no other component doc
-    defines a player tag either. This is the open-question default this
-    component takes (documented in its PR): a minimal, additive marker
-    component, attached to whichever entity is the player. Any later
-    component that spawns/owns the player entity should attach this tag;
-    ``handle_potential_death`` below checks for its presence and nothing
-    else.
-    """
+__all__ = [
+    "PlayerTagComponent",
+    "resolve_hit",
+    "handle_potential_death",
+    "process_monster_turns",
+    "depth_multipliers_for",
+    "validate_difficulty_config",
+    "set_data_registry",
+    "set_rng",
+    "set_monster_data_lookup",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -284,29 +288,49 @@ def handle_potential_death(target_id: int, killer_id: int, world: World, event_b
     world.destroy_entity(target_id)
 
 
-def _monster_ids(world: World) -> list[int]:
-    """Every StatsComponent-bearing entity that isn't the player, ascending
-    by entity ID (deterministic turn order per §2.3)."""
-    return sorted(
-        entity_id
-        for entity_id, _stats in world.query(StatsComponent)
-        if not _is_player(entity_id, world)
-    )
-
-
 _warned_no_ai_system = False
+
+# 02-ai-system.md's AISystem.__init__ subscribes several handlers onto the
+# event bus it's constructed with (check_wake, noise_emitted, ...) -- it is
+# not a stateless per-call helper, so process_monster_turns must not build
+# a fresh instance every call (that would pile up duplicate subscriptions
+# on the same bus, one set per tick). Cache one AISystem per world instead,
+# keyed weakly so a world going out of scope (e.g. between tests) doesn't
+# leak entries. One event_bus per world is this codebase's convention
+# (engine/main.py's Application owns exactly one of each), so keying on
+# world alone is sufficient.
+_ai_system_cache: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+
+
+def _get_ai_system(world: World, event_bus: EventBus):
+    from engine.systems.ai import AISystem
+
+    cached = _ai_system_cache.get(world)
+    if cached is None:
+        # `combat_system` is AISystem's own name for "whatever object
+        # exposes resolve_hit(attacker_id, defender_id, world, event_bus)"
+        # (02's own doc calls this a soft/duck-typed dependency) -- this
+        # module itself satisfies that shape, so it's passed directly
+        # rather than wrapping it in a class.
+        import sys
+
+        combat_module = sys.modules[__name__]
+        cached = AISystem(
+            world, event_bus, combat_module, stats_system=StatsSystem(world, event_bus)
+        )
+        _ai_system_cache[world] = cached
+    return cached
 
 
 def process_monster_turns(world: World, event_bus: EventBus) -> None:
-    """Runs one AI turn for every monster, ascending entity-ID order.
+    """Runs one AI turn for every awake monster, ascending entity-ID order.
     CombatSystem owns the loop and turn-order guarantee; 02-ai-system.md
-    owns what each monster decides to do (including doing nothing if
-    asleep -- this loop does not filter by "awake" itself). Documented call
-    this makes once 02 merges: ``ai_system.take_turn(entity_id, world,
-    event_bus)``."""
+    owns what each monster decides to do and which monsters are awake
+    (``AISystem.get_awake_monster_ids``/``take_turn``, both already
+    ascending-by-id and defensive about asleep entities on their own)."""
     global _warned_no_ai_system
     try:
-        from engine.systems import ai as ai_system
+        from engine.systems.ai import AISystem  # noqa: F401 -- import-availability check only
     except ImportError:
         if not _warned_no_ai_system:
             logger.info(
@@ -316,5 +340,6 @@ def process_monster_turns(world: World, event_bus: EventBus) -> None:
             _warned_no_ai_system = True
         return
 
-    for entity_id in _monster_ids(world):
+    ai_system = _get_ai_system(world, event_bus)
+    for entity_id in ai_system.get_awake_monster_ids(world):
         ai_system.take_turn(entity_id, world, event_bus)

@@ -399,6 +399,26 @@ def test_unknown_effect_type_is_silently_skipped():
     assert received == []
 
 
+def test_resolve_position_defaults_to_real_ai_position_component():
+    """02-ai-system.md merged with its own PositionComponent -- resolve_position
+    should pick it up by default without any explicit set_position_lookup
+    call (CONTRACTS.md §8: integrate against the real dependency once it
+    merges)."""
+    from engine.systems.ai import PositionComponent
+
+    world = World()
+    bus = EventBus()
+    source = world.create_entity()
+    target = world.create_entity()
+    world.add_component(target, PositionComponent(x=3, y=4))
+    received = []
+    bus.subscribe("noise_emitted", lambda payload: received.append(payload))
+
+    effects.apply_effect({"type": "noise", "radius": 1}, source, target, world, bus)
+
+    assert received[0]["position"] == (3, 4)
+
+
 def test_position_lookup_hook_used_as_fallback():
     world = World()
     bus = EventBus()

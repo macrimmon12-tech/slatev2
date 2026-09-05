@@ -1,0 +1,19 @@
+{
+  "id": "patroller_guard",
+  "display_name": "Dungeon Guard",
+  "stats": {"hp": 20, "max_hp": 20, "strength": 8, "dexterity": 4, "vision_range": 6},
+  "ai": {
+    "behavior": "patroller",
+    "state": "awake",
+    "aggro_range": 5,
+    "wake_radius": 5,
+    "flee_hp_threshold": 0.2,
+    "can_cast_while_fleeing": false,
+    "patrol_points": [[10, 4], [10, 8], [14, 8], [14, 4]],
+    "spells": [],
+    "behavior_phases": []
+  },
+  "xp_value": 15,
+  "noise_radius": 4,
+  "loot_table": {"entries": []}
+}

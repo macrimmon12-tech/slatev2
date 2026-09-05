@@ -36,12 +36,14 @@ needing to read this code.
 
 Position resolution (``noise``'s "falls back to target's position",
 ``teleport_self``, the ``position`` on ``damage_dealt``) has the same
-problem one level down: no ``PositionComponent`` exists anywhere in the
-codebase yet (00-foundation-core.md's own spatial_hash docstring says it's
-"defined by a later component"). :func:`set_position_lookup` lets whichever
-component introduces it register a ``(entity_id, world) -> (x, y) | None``
-callable; until one is registered, position resolution is ``None``
-everywhere, logged once.
+problem one level down: no ``PositionComponent`` was owned by any
+component doc when this module was first written. 02-ai-system.md has
+since defined one (``engine.systems.ai.PositionComponent``, its own
+documented stand-in for the same gap) -- :func:`resolve_position` now
+defaults to reading that component when no explicit lookup is registered.
+:func:`set_position_lookup` still exists so a later, more authoritative
+source (e.g. a real ``SpatialHash``-backed lookup) can override this
+default without another code change here.
 """
 
 from __future__ import annotations
@@ -83,27 +85,43 @@ _warned_no_position_lookup = False
 
 
 def set_position_lookup(lookup: PositionLookup | None) -> None:
-    """Registers ``lookup(entity_id, world) -> (x, y) | None``. Whichever
-    component introduces ``PositionComponent`` should call this once at
-    boot. Pass ``None`` to clear (test teardown)."""
+    """Registers ``lookup(entity_id, world) -> (x, y) | None``, overriding
+    the default (see :func:`resolve_position`). Pass ``None`` to clear
+    (test teardown) and fall back to the default again."""
     global _position_lookup
     _position_lookup = lookup
 
 
 def resolve_position(entity_id: int, world: World) -> Position | None:
-    """Best-effort "where is this entity" lookup. Returns ``None`` (logged
-    once) until :func:`set_position_lookup` has been called by whichever
-    later component introduces ``PositionComponent``."""
+    """Best-effort "where is this entity" lookup.
+
+    Uses :func:`set_position_lookup`'s registered override if one exists;
+    otherwise defaults to reading ``engine.systems.ai.PositionComponent``
+    (02-ai-system.md's stand-in for the position-component gap neither
+    00-foundation-core.md nor this component's own doc resolved -- see
+    module docstring). Returns ``None`` if the entity simply has no
+    position (never spawned with one) or -- logged once -- if even that
+    default component isn't importable."""
     global _warned_no_position_lookup
-    if _position_lookup is None:
+    if _position_lookup is not None:
+        return _position_lookup(entity_id, world)
+
+    try:
+        from engine.systems.ai import PositionComponent
+    except ImportError:
         if not _warned_no_position_lookup:
             logger.info(
                 "Position resolution not wired yet (no PositionComponent lookup "
-                "registered via effects.set_position_lookup) — defaulting to None."
+                "registered via effects.set_position_lookup, and engine.systems.ai "
+                "isn't importable either) — defaulting to None."
             )
             _warned_no_position_lookup = True
         return None
-    return _position_lookup(entity_id, world)
+
+    position_component = world.get_component(entity_id, PositionComponent)
+    if position_component is None:
+        return None
+    return (position_component.x, position_component.y)
 
 
 # ---------------------------------------------------------------------------
