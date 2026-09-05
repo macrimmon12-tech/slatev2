@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "contexts": {
+    "game": {
+      "move_north": ["Up"],
+      "move_east": ["Right"],
+      "interact": ["e"],
+      "menu": ["Escape"]
+    },
+    "targeting": {
+      "confirm_target": ["Return"],
+      "cancel_targeting": ["Escape"]
+    },
+    "ui": {
+      "quit_to_menu": ["Escape"]
+    }
+  }
+}

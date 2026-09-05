@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "contexts": {
+    "game": {
+      "move_north": ["Up", "w", "KP8"],
+      "move_south": ["Down", "s", "KP2"],
+      "move_east":  ["Right", "d", "KP6"],
+      "move_west":  ["Left", "a", "KP4"],
+      "move_ne": ["KP9"], "move_nw": ["KP7"],
+      "move_se": ["KP3"], "move_sw": ["KP1"],
+      "wait": ["KP5", "z"],
+      "interact": ["e", "Return"],
+      "use_stairs": ["Greater", "Less"],
+      "cast_spell_1": ["1"], "cast_spell_2": ["2"],
+      "use_item_1": ["q"],
+      "inventory": ["i"], "spellbook": ["p"],
+      "journal": ["j"], "minimap": ["m"],
+      "menu": ["Escape"]
+    },
+    "targeting": {
+      "move_cursor_north": ["Up", "w"], "move_cursor_south": ["Down", "s"],
+      "move_cursor_east": ["Right", "d"], "move_cursor_west": ["Left", "a"],
+      "confirm_target": ["Return", "e"],
+      "cancel_targeting": ["Escape"]
+    },
+    "ui": {
+      "confirm": ["Return"], "cancel": ["Escape"],
+      "nav_up": ["Up", "w"], "nav_down": ["Down", "s"],
+      "quit_to_menu": ["Escape"]
+    }
+  }
+}
