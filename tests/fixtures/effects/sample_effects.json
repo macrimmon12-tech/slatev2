@@ -1,0 +1,19 @@
+{
+  "effects": [
+    {"type": "damage", "amount": "6 + (STRENGTH * 0.3)", "damage_type": "fire"},
+    {"type": "restore_hp", "amount": "1d4"},
+    {"type": "restore_mp", "amount": "1d4"},
+    {"type": "stat_modifier", "stat": "armor", "op": "add", "value": 2, "duration": 0},
+    {"type": "noise", "radius": 5},
+    {"type": "vfx", "vfx_id": "spark", "data": {"color": "yellow"}},
+    {"type": "script", "script_ref": "npc_interaction.lua"},
+    {"type": "identify_item", "item_instance_id": "abc123"},
+    {"type": "remove_curse", "item_instance_id": "abc123"},
+    {"type": "teleport_self", "destination": "random_floor_tile"},
+    {"type": "apply_status", "effect_id": "poisoned", "duration": 5, "magnitude": 2},
+    {"type": "lifesteal", "percent": 50},
+    {"type": "reduce_armor", "amount": 3, "duration": 3},
+    {"type": "trigger_level_complete"},
+    {"type": "learn_spell", "spell_id": "fireball"}
+  ]
+}
