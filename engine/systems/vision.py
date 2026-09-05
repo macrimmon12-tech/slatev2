@@ -28,15 +28,17 @@ that may not be merged yet):
   once, never raising -- absence = zero cost (CONTRACTS.md §2 rule 7).
   This mirrors the same conservative default taken in
   ``engine/systems/progression.py``.
-- Entity position is authoritative via ``SpatialHash``
-  (``engine/core/spatial_hash.py``), but CONTRACTS.md doesn't document a
-  global ``SpatialHash`` singleton either (only that it's one of the few
-  sanctioned pieces of shared state, §9). ``VisionSystem`` accepts an
-  optional ``spatial_hash`` dependency and creates its own if none is
-  given (falling back to tracking positions itself from ``player_moved``
-  payloads, since a fresh, empty hash otherwise knows nothing) --
-  documented here so the real shared instance can be wired in once one
-  exists.
+- Entity position: ``engine/core/spatial_hash.py`` documents ``SpatialHash``
+  as authoritative, but CONTRACTS.md doesn't document a global
+  ``SpatialHash`` singleton, and ``02-ai-system.md`` (merged after this
+  component's initial implementation) resolved the same gap in practice by
+  reading/writing a per-entity ``PositionComponent`` directly rather than
+  through ``SpatialHash``. This module follows that precedent:
+  ``update_visibility``/``scan_for_traps`` resolve position via
+  ``world.get_component(entity_id, PositionComponent)`` first, falling
+  back to an optional injected ``spatial_hash`` (kept for tests/callers
+  that prefer it, and created empty if none is given) only when no
+  ``PositionComponent`` is attached.
 - ``06-worldgen-campaign.md``'s per-room ``lit``/``tiles`` data (spec §5.2)
   isn't produced by any merged component yet. ``VisionSystem`` exposes
   ``register_floor_rooms(floor_id, rooms)`` as the intended integration
@@ -46,18 +48,24 @@ that may not be merged yet):
   required graceful-degradation behavior (spec §5.2/§6).
 - "Foundation player-id convention": several component docs
   (``01-stats-combat.md``, ``10-lua-scripting-layer.md``) reference "00's
-  foundation player-id convention" for resolving which entity is the
-  player, but no merged foundation code nor CONTRACTS.md actually defines
-  one yet -- this is a genuine cross-component gap, not something this
-  component can resolve unilaterally. ``player_moved``'s payload is
-  documented in CONTRACTS.md §3.2 with key fields ``from``/``to`` only (no
-  ``entity_id``); this system reads ``entity_id`` from the payload if
-  present (treating the table's "(key fields)" heading as non-exhaustive)
-  and otherwise falls back to the most recently resolved player entity id.
-  If neither is available it logs once and no-ops rather than guessing or
-  crashing. Flagged here and in this component's PR as an escalation
-  candidate for CONTRACTS.md, same as the ``spell_chosen`` ambiguity
-  ``progression.py`` documents.
+  foundation player-id convention", but no merged foundation code nor
+  CONTRACTS.md actually defines one. ``02-ai-system.md`` (merged after
+  this component's initial implementation) hit the same gap and defined a
+  provisional ``PlayerTagComponent``/``PositionComponent`` pair in
+  ``engine/systems/ai.py``, explicitly inviting reuse ("any later
+  component should import and reuse this class rather than redefining
+  it"). This module takes that invitation: entity position is resolved
+  via ``PositionComponent`` first (matching how AI's own movement handling
+  actually populates it), and the player entity id via
+  ``world.query(PlayerTagComponent, PositionComponent)`` when
+  ``player_moved``'s payload doesn't carry an explicit ``entity_id`` and
+  none has been cached yet. ``player_moved``'s payload is documented in
+  CONTRACTS.md §3.2 with key fields ``from``/``to`` only (no
+  ``entity_id``); this system still reads ``entity_id`` from the payload
+  when present (treating the table's "(key fields)" heading as
+  non-exhaustive), falls back to the cached id, then to the
+  ``PlayerTagComponent`` query, and only logs once and no-ops if none of
+  the three resolve anything -- never guessing, never crashing.
 - Visibility state persistence (spec §9 Open Questions): stored as a plain
   per-floor dict owned internally by this class (the doc's documented
   alternative to a ``VisibilityComponent`` -- see component doc §4), not
@@ -77,6 +85,11 @@ from typing import Any
 from engine.core.ecs import World
 from engine.core.events import EventBus
 from engine.core.spatial_hash import SpatialHash, chebyshev_distance
+
+# 02-ai-system.md's provisional stand-ins for the undocumented "foundation
+# player-id convention" (see module docstring). ai.py explicitly invites
+# reuse of these rather than redefining them.
+from engine.systems.ai import PlayerTagComponent, PositionComponent
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +167,10 @@ class VisionSystem:
         self._player_entity_id = entity_id
 
         to_pos = payload.get("to") if payload else None
-        if to_pos is not None:
+        if to_pos is not None and self.world.get_component(entity_id, PositionComponent) is None:
+            # No PositionComponent to reflect the move (e.g. it's owned by
+            # movement handling that isn't merged/wired yet) -- keep our
+            # own SpatialHash fallback in sync from the payload instead.
             self._spatial_hash.insert(entity_id, tuple(to_pos))
 
         self.update_visibility(entity_id, self.world)
@@ -179,7 +195,14 @@ class VisionSystem:
     def _resolve_player_entity_id(self, payload: dict | None) -> int | None:
         if payload and payload.get("entity_id") is not None:
             return payload["entity_id"]
-        return self._player_entity_id
+        if self._player_entity_id is not None:
+            return self._player_entity_id
+        # Fall back to 02-ai-system.md's PlayerTagComponent convention
+        # (see module docstring) before giving up.
+        rows = self.world.query(PlayerTagComponent)
+        if rows:
+            return rows[0][0]
+        return None
 
     # -- vision -----------------------------------------------------------------
 
@@ -187,7 +210,7 @@ class VisionSystem:
         """Recomputes and returns the currently-visible tile set for
         ``entity_id`` on the current floor; also folds it into that
         floor's permanent 'seen' set."""
-        position = self._spatial_hash.position_of(entity_id)
+        position = self._position_of(entity_id, world)
         if position is None:
             self._warn_once(
                 "no_position",
@@ -234,6 +257,16 @@ class VisionSystem:
                 return room
         return None
 
+    def _position_of(self, entity_id: int, world: World) -> Position | None:
+        """Resolves an entity's position, preferring ``PositionComponent``
+        (02-ai-system.md's convention -- see module docstring) and falling
+        back to the injected/internal ``SpatialHash`` if the entity has no
+        such component attached."""
+        position = world.get_component(entity_id, PositionComponent)
+        if position is not None:
+            return (position.x, position.y)
+        return self._spatial_hash.position_of(entity_id)
+
     # -- trap detection (intentional stub) -------------------------------------
 
     def scan_for_traps(self, entity_id: int, world: World, event_bus: EventBus) -> None:
@@ -255,7 +288,7 @@ class VisionSystem:
         something" -- that is spec §12's deferred scope, not this
         component's (see component doc §1.1's explicit warning).
         """
-        position = self._spatial_hash.position_of(entity_id)
+        position = self._position_of(entity_id, world)
         if position is None:
             return
         trap_detect_radius = self._get_stat(entity_id, "trap_detect_radius", world)
@@ -268,7 +301,7 @@ class VisionSystem:
             return
 
         for trap_entity_id, trap in world.query(TrapComponent):  # pragma: no cover
-            trap_position = self._spatial_hash.position_of(trap_entity_id)
+            trap_position = self._position_of(trap_entity_id, world)
             if trap_position is None:
                 continue
             if chebyshev_distance(trap_position, position) <= trap_detect_radius:

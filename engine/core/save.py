@@ -28,7 +28,12 @@ from engine.core.ecs import World, is_component
 # Component classes from other components, imported here solely to populate
 # _COMPONENT_REGISTRY below. Alphabetical by component name, one import per
 # line, so each new component's PR adds exactly one line here and one entry
-# to the dict — the same low-conflict shape as the registry itself.
+# to the dict — the same low-conflict shape as the registry itself. This
+# file is the one documented, shared exception to "don't import another
+# component's module": every component's own module stays the source of
+# truth for its component classes, this dict just points at them so
+# save/load can find them by name.
+from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent
 from engine.systems.progression import XpComponent
 
 logger = logging.getLogger(__name__)
@@ -37,6 +42,9 @@ logger = logging.getLogger(__name__)
 # Each Wave 1 component adds its own entries here in the same PR that
 # introduces the dataclass (CONTRACTS.md §2 rule 3).
 _COMPONENT_REGISTRY: dict[str, type] = {
+    "AIComponent": AIComponent,
+    "PlayerTagComponent": PlayerTagComponent,
+    "PositionComponent": PositionComponent,
     "XpComponent": XpComponent,
 }
 

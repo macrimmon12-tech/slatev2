@@ -1,0 +1,19 @@
+{
+  "id": "coward_rat",
+  "display_name": "Giant Rat",
+  "stats": {"hp": 6, "max_hp": 6, "strength": 3, "dexterity": 7, "vision_range": 5},
+  "ai": {
+    "behavior": "coward",
+    "state": "asleep",
+    "aggro_range": 4,
+    "wake_radius": 4,
+    "flee_hp_threshold": 0.4,
+    "can_cast_while_fleeing": true,
+    "patrol_points": [],
+    "spells": ["minor_poison_spit"],
+    "behavior_phases": []
+  },
+  "xp_value": 4,
+  "noise_radius": 2,
+  "loot_table": {"entries": []}
+}
