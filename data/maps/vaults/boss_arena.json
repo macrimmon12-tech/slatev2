@@ -1,0 +1,23 @@
+{
+  "id": "boss_arena",
+  "display_name": "Boss Arena",
+  "min_depth": 8,
+  "max_depth": 20,
+  "width": 11,
+  "height": 9,
+  "tiles": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#.........#",
+    "#....#....#",
+    "#.........#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "entity_spawns": [
+    {"entity_id": "keep_boss", "x": 5, "y": 4}
+  ],
+  "loot_spawns": []
+}

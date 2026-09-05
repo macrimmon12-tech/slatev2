@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "screens": {
+    "main_menu": {
+      "type": "Panel",
+      "id": "main_menu",
+      "rect": { "x": "center", "y": "center", "w": 400, "h": 320 },
+      "background": "panel_bg",
+      "children": [
+        {
+          "type": "Label",
+          "text": "SLATE",
+          "rect": { "x": "center", "y": 20, "w": 400, "h": 40 },
+          "style": "title"
+        },
+        {
+          "type": "Button",
+          "id": "btn_new_game",
+          "text": "New Game",
+          "rect": { "x": "center", "y": 100, "w": 200, "h": 36 },
+          "on_click": { "event": "new_game_selected", "payload": { "campaign_id": null } }
+        },
+        {
+          "type": "Button",
+          "id": "btn_load_game",
+          "text": "Load Game",
+          "rect": { "x": "center", "y": 150, "w": 200, "h": 36 },
+          "on_click": { "event": "show_panel", "payload": { "panel_id": "save_select" } }
+        },
+        {
+          "type": "Button",
+          "id": "btn_quit",
+          "text": "Quit",
+          "rect": { "x": "center", "y": 200, "w": 200, "h": 36 },
+          "on_click": { "event": "quit_selected", "payload": {} }
+        }
+      ]
+    },
+    "save_select": {
+      "type": "Panel",
+      "id": "save_select",
+      "rect": { "x": "center", "y": "center", "w": 500, "h": 400 },
+      "background": "panel_bg",
+      "children": [
+        {
+          "type": "Label",
+          "text": "Load Game",
+          "rect": { "x": "center", "y": 20, "w": 500, "h": 30 }
+        },
+        {
+          "type": "List",
+          "id": "save_list",
+          "items_key": "save_slots",
+          "rect": { "x": 20, "y": 60, "w": 460, "h": 300 },
+          "item_template": {
+            "type": "Button",
+            "text": "{{item.name}}",
+            "rect": { "x": 0, "y": 0, "w": 460, "h": 32 },
+            "on_click": {
+              "event": "save_slot_selected",
+              "payload": { "slot": "{{item.slot_id}}" }
+            }
+          }
+        },
+        {
+          "type": "Button",
+          "id": "btn_back",
+          "text": "Back",
+          "rect": { "x": "center", "y": 360, "w": 150, "h": 32 },
+          "on_click": { "event": "show_panel", "payload": { "panel_id": "main_menu" } }
+        }
+      ]
+    }
+  }
+}

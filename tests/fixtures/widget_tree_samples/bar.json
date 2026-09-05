@@ -1,0 +1,8 @@
+{
+  "type": "Bar",
+  "id": "hp_bar",
+  "value_key": "hp",
+  "max_key": "max_hp",
+  "rect": { "x": 0, "y": 0, "w": 100, "h": 10 },
+  "color": "hp_red"
+}

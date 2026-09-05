@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "colors": {
+    "wall": [90, 90, 100],
+    "floor": [40, 40, 46],
+    "entity_default": [200, 60, 60],
+    "player": [60, 160, 220],
+    "hud_background": [24, 24, 28],
+    "missing": [255, 0, 255]
+  }
+}
