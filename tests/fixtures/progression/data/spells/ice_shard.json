@@ -1,0 +1,5 @@
+{
+  "id": "ice_shard",
+  "display_name": "Ice Shard (fixture)",
+  "effects": [{"type": "damage", "amount": "2d6", "damage_type": "cold"}]
+}

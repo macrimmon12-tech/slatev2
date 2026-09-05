@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "xp_thresholds": [50, 120, 200],
+  "repeating_tail_increment": 100,
+  "stat_gains_per_level": {"max_hp": 5, "strength": 1},
+  "bonus_points_per_level": 2,
+  "spell_choice_options_count": 3
+}

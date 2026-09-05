@@ -25,13 +25,20 @@ from typing import Any, Iterable
 
 from engine.core.ecs import World, is_component
 
+# Component classes from other components, imported here solely to populate
+# _COMPONENT_REGISTRY below. Alphabetical by component name, one import per
+# line, so each new component's PR adds exactly one line here and one entry
+# to the dict — the same low-conflict shape as the registry itself.
+from engine.systems.progression import XpComponent
+
 logger = logging.getLogger(__name__)
 
 # name -> component class. Additive-only, alphabetical by component name.
-# Empty at the foundation layer — no gameplay components exist yet; each
-# Wave 1 component adds its own entries here in the same PR that introduces
-# the dataclass (CONTRACTS.md §2 rule 3).
-_COMPONENT_REGISTRY: dict[str, type] = {}
+# Each Wave 1 component adds its own entries here in the same PR that
+# introduces the dataclass (CONTRACTS.md §2 rule 3).
+_COMPONENT_REGISTRY: dict[str, type] = {
+    "XpComponent": XpComponent,
+}
 
 _warned_unregistered: set[str] = set()
 
