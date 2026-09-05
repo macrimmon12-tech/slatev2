@@ -192,7 +192,8 @@ event.
 | `campaign_complete` | CampaignSystem | `campaign_id` | UI |
 | `game_complete` | CampaignSystem | — | UI |
 | `new_game_selected` / `load_game_selected` / `save_slot_selected` / `quit_selected` | main menu UI | varies | main.py |
-| `show_panel` | any system needing UI | `panel_id, data` | UIRuntime / Lua |
+| `show_panel` | any system needing UI | `panel_id, data, tree` (tree is optional — added by 10's `engine.create_panel`/`update_panel`, see 10-lua-scripting-layer.md §2.2) | UIRuntime / Lua |
+| `panel_closed` | Lua (`engine.destroy_panel`, 10-lua-scripting-layer.md §2.2) | `panel_id` | UIRuntime |
 | `message` | any system | `text, category` | UI message log |
 | `play_sound` | any system (or `"sound"` override key on any payload) | `sound_id, position \| None` | audio system |
 | `vfx_play` | combat/effects | `vfx_id, position, data` | anim system |
