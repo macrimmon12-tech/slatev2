@@ -1,0 +1,19 @@
+{
+  "id": "ambusher_spider",
+  "display_name": "Cave Spider",
+  "stats": {"hp": 8, "max_hp": 8, "strength": 4, "dexterity": 9, "vision_range": 4},
+  "ai": {
+    "behavior": "ambusher",
+    "state": "asleep",
+    "aggro_range": 6,
+    "wake_radius": 2,
+    "flee_hp_threshold": 0.15,
+    "can_cast_while_fleeing": false,
+    "patrol_points": [],
+    "spells": [],
+    "behavior_phases": []
+  },
+  "xp_value": 8,
+  "noise_radius": 2,
+  "loot_table": {"entries": []}
+}
