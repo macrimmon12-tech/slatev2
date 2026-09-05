@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "bsp": {"min_room_size": 5, "max_split_depth": 5, "room_margin": 1},
+  "vault_fill_probability": 0.4,
+  "corridor_room_id_prefix": "corridor"
+}

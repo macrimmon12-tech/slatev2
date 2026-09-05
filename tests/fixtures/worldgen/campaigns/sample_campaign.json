@@ -1,0 +1,42 @@
+{
+  "id": "sample_campaign",
+  "display_name": "Sample Campaign (fixture)",
+  "levels": [
+    {
+      "id": "level_a",
+      "depth": 1,
+      "is_hub": false,
+      "width": 30,
+      "height": 20,
+      "monster_spawns": [{"entity_id": "fixture_rat", "count": [1, 2]}],
+      "vaults": []
+    },
+    {
+      "id": "level_hub",
+      "depth": 1,
+      "is_hub": true,
+      "width": 20,
+      "height": 15,
+      "monster_spawns": [],
+      "vaults": []
+    },
+    {
+      "id": "level_deep_but_early",
+      "depth": 9,
+      "is_hub": false,
+      "width": 25,
+      "height": 18,
+      "monster_spawns": [],
+      "vaults": []
+    },
+    {
+      "id": "level_b",
+      "depth": 2,
+      "is_hub": false,
+      "width": 30,
+      "height": 20,
+      "monster_spawns": [],
+      "vaults": []
+    }
+  ]
+}
