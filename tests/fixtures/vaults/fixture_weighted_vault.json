@@ -1,0 +1,13 @@
+{
+  "id": "fixture_weighted_vault",
+  "display_name": "Fixture Weighted Vault",
+  "width": 3,
+  "height": 3,
+  "tiles": [
+    "###",
+    "#.#",
+    "###"
+  ],
+  "entity_spawns": [],
+  "loot_spawns": []
+}
