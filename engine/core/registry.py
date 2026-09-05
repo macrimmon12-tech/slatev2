@@ -13,20 +13,41 @@ directories.
 
 Load priority (CONTRACTS.md §4): base archives -> mod archives (order from
 ``mods/load_order.txt``, top = lowest priority) -> loose files, with loose
-files always winning. Archive reading isn't implemented yet (that's
-component 12); this module accepts an already-resolved list of loose-file
-directories standing in for "mods" for now, in ascending priority order,
-loaded after the base ``data_root`` and before nothing (there is no
-separate "loose override" tier yet since every source here is already a
-loose directory) — when archives land, ``data_root`` keeps meaning "loose
-files" and stays the highest-priority source by construction: it is always
-loaded last.
+files always winning.
 
 Same ``id`` at the *same* priority (e.g. two files within one source root)
 is a load-time error naming both conflicting paths. Same ``id`` at
 *different* priority is a silent override, by design — CONTRACTS.md §4
 explicitly says not to warn here, it would get noisy under normal modding
 use.
+
+--- 12-modding-archive-system.md retrofit note ---
+This module used to walk bare ``Path`` directories directly (``rglob``,
+``Path.open``) with no seam for anything else. ``12-modding-archive-system.md``
+extends it here, per that component's Open Questions §10 default ("if
+genuinely no seam exists ... implement the minimal non-breaking extension
+yourself, e.g. wrap Path behind a thin ContentSource-compatible adapter"):
+
+- :class:`ContentSource` — the minimal read interface
+  (``list_files``/``read``/``exists``) a source root must support, whether
+  backed by a loose directory (:class:`DirectorySource`, below) or an
+  archive (``engine.modding.archive.ArchiveSource``, wrapped by
+  ``engine.modding.load_order.ScopedSource``/``resolve_source_list``).
+- :class:`DirectorySource` — wraps a bare ``Path`` so the existing
+  loose-directory code path (``load()``) needs no behavior change; it is
+  used internally by ``load()`` exactly where a bare ``Path`` was walked
+  before, so every existing caller/test of ``load()`` keeps its exact prior
+  signature and outcome.
+- :meth:`DataRegistry.load_sources` — a new, purely additive entry point
+  (``load()`` is untouched) that accepts a fully pre-resolved, ordered list
+  of priority *tiers* (``list[list[ContentSource]]``, lowest priority
+  first, each inner list sharing one priority slot). This is the seam
+  ``engine.modding.load_order.resolve_source_list()`` targets, and what
+  ``engine/main.py``'s ``Application.boot()`` now calls in place of a bare
+  ``load()`` so archive/mod resolution is actually wired into the real boot
+  path rather than merely available.
+
+See that component's PR description for the full rationale.
 """
 
 from __future__ import annotations
@@ -35,8 +56,55 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 logger = logging.getLogger(__name__)
+
+
+@runtime_checkable
+class ContentSource(Protocol):
+    """Minimal read interface a registry source root must support,
+    whether backed by a loose directory or an archive. Paths are always
+    relative to the source's own data root (matching how ``data_root``
+    already points directly at the ``data/`` tree with no extra ``data/``
+    segment of its own) — every downstream JSON parsing path is unaware of
+    where the bytes actually came from."""
+
+    def list_files(self) -> list[str]:
+        """All file paths under this source, relative to its root."""
+        ...
+
+    def read(self, relative_path: str) -> bytes:
+        """Raw bytes of one file, addressed by a path from ``list_files``."""
+        ...
+
+    def exists(self, relative_path: str) -> bool:
+        ...
+
+
+class DirectorySource:
+    """:class:`ContentSource` adapter over a loose directory on disk."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = Path(root)
+
+    def list_files(self) -> list[str]:
+        if not self.root.is_dir():
+            return []  # absence = zero cost (CONTRACTS.md §2 rule 7)
+        return [
+            str(path.relative_to(self.root)).replace("\\", "/")
+            for path in self.root.rglob("*")
+            if path.is_file()
+        ]
+
+    def read(self, relative_path: str) -> bytes:
+        return (self.root / relative_path).read_bytes()
+
+    def exists(self, relative_path: str) -> bool:
+        return (self.root / relative_path).is_file()
+
+    def __repr__(self) -> str:  # pragma: no cover - debug convenience
+        return f"DirectorySource({self.root})"
 
 # (relative directory under a source root, excluded sub-paths, key field).
 # key field is "id" for every namespace except "configs", which keys by
@@ -82,98 +150,135 @@ class DataRegistry:
 
     def __init__(self) -> None:
         self._data: dict[str, dict[str, dict]] = {ns: {} for ns in NAMESPACE_TABLE}
-        # Tracks (namespace, id) -> (priority, source_path) for duplicate
-        # detection across reload() calls.
-        self._sources: dict[str, dict[str, tuple[int, Path]]] = {
+        # Tracks (namespace, id) -> (priority, location) for duplicate
+        # detection across reload() calls. ``location`` is a human-readable
+        # string (not necessarily a filesystem Path — it may name a file
+        # inside an archive) used only for error messages.
+        self._sources: dict[str, dict[str, tuple[int, str]]] = {
             ns: {} for ns in NAMESPACE_TABLE
         }
         self._data_root: Path | None = None
         self._mod_load_order: list[Path] = []
+        # Set by load_sources() instead of load(); see that method and the
+        # module docstring's retrofit note.
+        self._tiers_override: list[list[ContentSource]] | None = None
 
     def load(self, data_root: Path, mod_load_order: list[Path] | None = None) -> None:
         """Load every namespace from ``data_root`` (priority 0, the game's
         base loose content) plus each directory in ``mod_load_order`` (in
         list order, each at successively higher priority than the base and
         than earlier entries in the list — later entries win on conflict).
+
+        Unchanged since before the 12-modding-archive-system.md retrofit —
+        every existing caller/test keeps its exact behavior. See
+        :meth:`load_sources` for the archive-aware entry point.
         """
         self._data_root = Path(data_root)
         self._mod_load_order = [Path(p) for p in (mod_load_order or [])]
+        self._tiers_override = None
+        self._reload_from_sources()
+
+    def load_sources(self, tiers: list[list[ContentSource]]) -> None:
+        """Load from a fully pre-resolved, ordered list of priority tiers
+        (lowest priority first; each inner list shares one priority slot —
+        a same-id collision within one tier raises :class:`DuplicateIdError`
+        exactly like two files in one loose directory does via :meth:`load`).
+
+        This is the seam ``engine.modding.load_order.resolve_source_list()``
+        targets (12-modding-archive-system.md) and is purely additive:
+        :meth:`load` keeps its exact prior two-argument shape and behavior
+        for every existing caller. ``engine/main.py``'s ``Application.boot()``
+        calls this instead of :meth:`load` so real archive/mod resolution is
+        actually wired into the boot path.
+        """
+        self._data_root = None
+        self._mod_load_order = []
+        self._tiers_override = [list(tier) for tier in tiers]
         self._reload_from_sources()
 
     def reload(self) -> None:
         """Re-scan disk using the source roots passed to the last
-        :meth:`load` call. Dev/editor use only."""
-        if self._data_root is None:
-            raise RuntimeError("DataRegistry.reload() called before load()")
+        :meth:`load`/:meth:`load_sources` call. Dev/editor use only."""
+        if self._data_root is None and self._tiers_override is None:
+            raise RuntimeError(
+                "DataRegistry.reload() called before load()/load_sources()"
+            )
         self._reload_from_sources()
 
     def _reload_from_sources(self) -> None:
-        assert self._data_root is not None
         self._data = {ns: {} for ns in NAMESPACE_TABLE}
         self._sources = {ns: {} for ns in NAMESPACE_TABLE}
 
-        source_roots = [self._data_root, *self._mod_load_order]
-        for priority, source_root in enumerate(source_roots):
+        if self._tiers_override is not None:
+            tiers = self._tiers_override
+        else:
+            assert self._data_root is not None
+            tiers = [[DirectorySource(self._data_root)]]
+            tiers.extend([DirectorySource(p)] for p in self._mod_load_order)
+
+        for priority, tier in enumerate(tiers):
             for namespace, spec in NAMESPACE_TABLE.items():
-                self._load_namespace_from_root(namespace, spec, source_root, priority)
+                for source in tier:
+                    self._load_namespace_from_root(namespace, spec, source, priority)
 
     def _load_namespace_from_root(
         self,
         namespace: str,
         spec: NamespaceSpec,
-        source_root: Path,
+        source: ContentSource,
         priority: int,
     ) -> None:
-        namespace_dir = source_root / spec.directory
-        if not namespace_dir.is_dir():
-            return  # absence = zero cost — a mod needn't provide every namespace
+        prefix = spec.directory.strip("/") + "/"
+        excluded_prefixes = tuple(f"{prefix}{excl}/" for excl in spec.excludes)
 
-        excluded_dirs = {namespace_dir / excl for excl in spec.excludes}
-
-        for json_path in sorted(namespace_dir.rglob("*.json")):
-            if any(
-                excluded == json_path or excluded in json_path.parents
-                for excluded in excluded_dirs
-            ):
-                continue
-            self._load_file(namespace, spec, json_path, priority)
+        matching = sorted(
+            relative_path
+            for relative_path in source.list_files()
+            if relative_path.startswith(prefix)
+            and relative_path.endswith(".json")
+            and not any(relative_path.startswith(excl) for excl in excluded_prefixes)
+        )
+        for relative_path in matching:
+            self._load_file(namespace, spec, source, relative_path, priority)
 
     def _load_file(
         self,
         namespace: str,
         spec: NamespaceSpec,
-        json_path: Path,
+        source: ContentSource,
+        relative_path: str,
         priority: int,
     ) -> None:
-        with json_path.open("r", encoding="utf-8") as fh:
-            try:
-                payload = json.load(fh)
-            except json.JSONDecodeError as exc:
-                raise ValueError(f"Malformed JSON in {json_path}: {exc}") from exc
+        location = f"{relative_path} (from {source!r})"
+        raw = source.read(relative_path)
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Malformed JSON in {location}: {exc}") from exc
 
         if not isinstance(payload, dict):
             raise ValueError(
-                f"Content file {json_path} must contain a JSON object, got {type(payload).__name__}"
+                f"Content file {location} must contain a JSON object, got {type(payload).__name__}"
             )
 
         if spec.key_field is None:
-            key = json_path.stem
+            key = Path(relative_path).stem
         else:
             key = payload.get(spec.key_field)
             if not isinstance(key, str) or not key:
                 raise ValueError(
-                    f"Content file {json_path} is missing a non-empty string "
+                    f"Content file {location} is missing a non-empty string "
                     f"{spec.key_field!r} field (namespace {namespace!r})"
                 )
 
         sources = self._sources[namespace]
         existing = sources.get(key)
         if existing is not None:
-            existing_priority, existing_path = existing
+            existing_priority, existing_location = existing
             if existing_priority == priority:
                 raise DuplicateIdError(
                     f"Duplicate id {key!r} in namespace {namespace!r} at the same "
-                    f"load priority: {existing_path} and {json_path}"
+                    f"load priority: {existing_location} and {location}"
                 )
             if priority < existing_priority:
                 # Lower priority than what's already loaded — the existing
@@ -182,7 +287,7 @@ class DataRegistry:
             # Higher priority than what's loaded — silently override, no
             # warning (deliberate, CONTRACTS.md §4).
 
-        sources[key] = (priority, json_path)
+        sources[key] = (priority, location)
         self._data[namespace][key] = payload
 
     def get(self, namespace: str, id: str) -> dict | None:
