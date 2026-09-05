@@ -141,11 +141,11 @@ def test_table_column_headers_are_labeled() -> None:
     assert headers == ["Type", "Value"]
 
 
-def test_archive_support_unavailable_before_component_12_merges() -> None:
-    """Soft dependency on 12-modding-archive-system.md (doc §2.1): until it
-    merges, the editor UI is expected to keep "Open Archive..." disabled."""
+def test_archive_support_available_now_that_component_12_has_merged() -> None:
+    """Soft dependency on 12-modding-archive-system.md (doc §2.1): now that
+    it has merged, the editor UI's "Open Archive..." should be enabled."""
     editor = Editor()
-    assert editor.archive_support_available() is False
+    assert editor.archive_support_available() is True
 
 
 def test_sprite_cache_invalidate_bumps_version_and_clears() -> None:

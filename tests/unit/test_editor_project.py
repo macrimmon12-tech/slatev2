@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from editor.project import ArchiveSupportUnavailable, Project
+from editor.project import Project
 
 
 def test_new_creates_directory_skeleton_and_blank_map(tmp_path: Path) -> None:
@@ -52,11 +52,31 @@ def test_open_missing_path_raises(tmp_path: Path) -> None:
         Project.open(tmp_path / "does_not_exist")
 
 
-def test_open_archive_without_component_12_raises_documented_stub_error(tmp_path: Path) -> None:
+def test_open_malformed_archive_raises(tmp_path: Path) -> None:
+    # 12-modding-archive-system.md has merged, so opening a .pak/.pkd now
+    # goes through the real ArchiveSource — a not-actually-a-zip file
+    # raises from that real reader (zipfile.BadZipFile), not the
+    # pre-merge ArchiveSupportUnavailable stub error this test used to
+    # exercise. Per CONTRACTS.md §8: replace the stubbed-dependency test
+    # with one against the real thing once it merges, rather than keep
+    # asserting a premise ("12 hasn't merged") that's no longer true.
     fake_pak = tmp_path / "mod.pak"
     fake_pak.write_bytes(b"not a real archive")
-    with pytest.raises(ArchiveSupportUnavailable):
+    with pytest.raises(Exception):
         Project.open(fake_pak)
+
+
+def test_open_real_archive_round_trips_through_pack(tmp_path: Path) -> None:
+    """Real integration with 12-modding-archive-system.md: pack a project
+    to .pak, then open that .pak back up and confirm its content survived
+    the round trip."""
+    project = Project.new(tmp_path / "myproj")
+    dist_dir = tmp_path / "dist"
+    pak_path, _pkd_path = project.pack(dist_dir)
+
+    reopened = Project.open(pak_path)
+    blank_map = json.loads(reopened.data_path("maps", "untitled.json").read_text())
+    assert blank_map["id"] == "untitled"
 
 
 def test_data_path_and_assets_path_helpers(tmp_path: Path) -> None:

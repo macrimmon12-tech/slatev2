@@ -175,8 +175,20 @@ class Project:
                     "instead (see docs/components/13-editor-core-authoring.md §2.1)."
                 ) from exc
 
+            # 12's real ArchiveSource is a read-only ContentSource
+            # (list_files/read/exists/close) — it has no directory-unpack
+            # method of its own (this component guessed one before 12
+            # merged; the real shape is narrower). Extract every file
+            # through the real, stable read API instead.
             dest = path.with_suffix("")
-            ArchiveSource(path).unpack_to(dest)  # type: ignore[attr-defined]
+            source = ArchiveSource(path)
+            try:
+                for relative_path in source.list_files():
+                    out_path = dest / relative_path
+                    out_path.parent.mkdir(parents=True, exist_ok=True)
+                    out_path.write_bytes(source.read(relative_path))
+            finally:
+                source.close()
             return cls(dest)
 
         raise FileNotFoundError(f"Not a project folder or a .pak/.pkd archive: {path}")
@@ -246,7 +258,13 @@ class Project:
         try:
             from engine.modding.archive import write_archive  # type: ignore
 
-            write_archive(self.root, pak_path, pkd_path)  # type: ignore[misc]
+            # 12's real write_archive(archive_path, source_dir) writes one
+            # archive per call (this component guessed a combined
+            # write_archive(source_dir, pak_path, pkd_path) before 12
+            # merged; the real signature is narrower) — call it once per
+            # target extension, both from the same loose source.
+            write_archive(pak_path, self.root)  # type: ignore[misc]
+            write_archive(pkd_path, self.root)  # type: ignore[misc]
         except ImportError:
             self._stub_write_zip(pak_path)
             self._stub_write_zip(pkd_path)
