@@ -262,10 +262,28 @@ def test_tick_does_not_prune_before_duration_elapses():
 
 
 def test_draw_and_tick_are_fully_standalone_with_a_bare_bus_and_stub_hook():
-    import sys
+    # A sys.modules-membership check would be a false negative once sibling
+    # Wave 1 components (08-ui-runtime.md, 07-input-renderer-audio.md) are
+    # merged into the same test run and legitimately import ui_runtime/
+    # renderer for their own tests -- process-wide sys.modules state isn't
+    # scoped to this module. Statically inspect anim_system's own imports
+    # instead, which is what "this component doesn't import those" actually
+    # means and is robust to what else has loaded in-process.
+    import ast
+    import inspect
 
-    assert "engine.ui.ui_runtime" not in sys.modules
-    assert "engine.render.renderer" not in sys.modules
+    from engine.ui import anim_system as anim_system_module
+
+    tree = ast.parse(inspect.getsource(anim_system_module))
+    imported_names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported_names.add(node.module)
+
+    assert not any(name.startswith("engine.ui.ui_runtime") for name in imported_names)
+    assert not any(name.startswith("engine.render.renderer") for name in imported_names)
 
     pygame.display.init()
     try:
@@ -284,7 +302,3 @@ def test_draw_and_tick_are_fully_standalone_with_a_bare_bus_and_stub_hook():
         anim.draw(surface, world_to_screen)  # must not raise
     finally:
         pygame.display.quit()
-
-    # Still no accidental import of the modules this component doesn't own.
-    assert "engine.ui.ui_runtime" not in sys.modules
-    assert "engine.render.renderer" not in sys.modules
