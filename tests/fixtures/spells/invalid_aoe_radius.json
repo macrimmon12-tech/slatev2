@@ -1,0 +1,8 @@
+{
+  "id": "bad_aoe_spell",
+  "display_name": "Bad AoE Spell",
+  "targeting_mode": "aoe_self",
+  "mp_cost": 1,
+  "aoe_radius": 0,
+  "effects": []
+}

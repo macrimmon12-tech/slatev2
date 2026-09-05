@@ -1,0 +1,13 @@
+{
+  "id": "minor_heal",
+  "display_name": "Minor Heal",
+  "targeting_mode": "self",
+  "mp_cost": 4,
+  "int_requirement": 0,
+  "fail_chance_formula": "max(0.0, 0.05 - (INT * 0.005))",
+  "aoe_radius": 0,
+  "backfire_effects": [],
+  "effects": [
+    {"type": "restore_hp", "amount": "2d4 + (INT * 0.2)"}
+  ]
+}

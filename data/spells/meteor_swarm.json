@@ -1,0 +1,16 @@
+{
+  "id": "meteor_swarm",
+  "display_name": "Meteor Swarm",
+  "targeting_mode": "aoe_targeted",
+  "mp_cost": 14,
+  "int_requirement": 6,
+  "fail_chance_formula": "max(0.0, 0.25 - (INT * 0.015))",
+  "aoe_radius": 2,
+  "backfire_effects": [
+    {"type": "damage", "amount": "2d6", "damage_type": "fire"}
+  ],
+  "effects": [
+    {"type": "damage", "amount": "3d6 + (INT * 0.5)", "damage_type": "fire"},
+    {"type": "vfx", "vfx_id": "meteor_impact"}
+  ]
+}
