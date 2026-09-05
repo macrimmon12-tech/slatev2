@@ -1,0 +1,26 @@
+{
+  "content_type": "monster",
+  "namespace": "entities",
+  "fields": [
+    {"key": "id", "label": "ID", "widget": "text", "required": true},
+    {"key": "display_name", "label": "Display Name", "widget": "text"},
+    {"key": "sprite_ref", "label": "Sprite", "widget": "sprite_picker"},
+    {"key": "stats.hp", "label": "HP", "widget": "int", "min": 1, "default": 10},
+    {"key": "stats.vision_range", "label": "Vision Range", "widget": "int", "min": 0, "default": 6},
+    {
+      "key": "ai.behavior",
+      "label": "AI Behavior",
+      "widget": "dropdown",
+      "options": ["chaser", "ambusher", "patroller", "coward"]
+    },
+    {
+      "key": "loot_table.entries",
+      "label": "Loot Table",
+      "widget": "effect_array",
+      "columns": [
+        {"key": "item_id", "label": "Item", "widget": "id_picker_or_typed", "options_from_namespace": "items"},
+        {"key": "weight", "label": "Weight", "widget": "float"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "untitled",
+  "display_name": "Untitled",
+  "width": 4,
+  "height": 3,
+  "tiles": [
+    {"x": 0, "y": 0, "walkable": true, "room_id": null, "sprite_ref": null, "is_lit_room": false}
+  ],
+  "rooms": {},
+  "stairs_down": null,
+  "stairs_up": null,
+  "entities": [],
+  "transitions": []
+}

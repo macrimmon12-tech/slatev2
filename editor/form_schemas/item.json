@@ -1,0 +1,25 @@
+{
+  "content_type": "item",
+  "namespace": "items",
+  "fields": [
+    {"key": "id", "label": "ID", "widget": "text", "required": true},
+    {"key": "display_name", "label": "Display Name", "widget": "text"},
+    {"key": "sprite_ref", "label": "Sprite", "widget": "sprite_picker"},
+    {
+      "key": "slot",
+      "label": "Equip Slot",
+      "widget": "dropdown",
+      "options": ["weapon", "armor", "trinket", "consumable"]
+    },
+    {"key": "value", "label": "Gold Value", "widget": "int", "min": 0, "default": 0},
+    {
+      "key": "on_use_effects",
+      "label": "On-Use Effects",
+      "widget": "effect_array",
+      "columns": [
+        {"key": "type", "label": "Type", "widget": "id_picker_or_typed", "options_from_namespace": "effects"},
+        {"key": "value", "label": "Value", "widget": "text"}
+      ]
+    }
+  ]
+}
