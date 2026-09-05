@@ -1,0 +1,8 @@
+{
+  "id": "poisoned",
+  "name": "Poisoned",
+  "damage_type": "poison",
+  "tick_effects": [
+    {"type": "damage", "amount": "1d3", "damage_type": "poison"}
+  ]
+}

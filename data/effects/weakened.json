@@ -1,0 +1,7 @@
+{
+  "id": "weakened",
+  "name": "Weakened",
+  "tick_effects": [
+    {"type": "stat_modifier", "stat": "damage_min", "op": "add", "value": -2}
+  ]
+}

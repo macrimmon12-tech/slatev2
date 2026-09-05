@@ -24,14 +24,18 @@ from types import ModuleType
 from typing import Any, Iterable
 
 from engine.core.ecs import World, is_component
+from engine.systems.combat import PlayerTagComponent
+from engine.systems.stats import StatsComponent
 
 logger = logging.getLogger(__name__)
 
 # name -> component class. Additive-only, alphabetical by component name.
-# Empty at the foundation layer — no gameplay components exist yet; each
-# Wave 1 component adds its own entries here in the same PR that introduces
-# the dataclass (CONTRACTS.md §2 rule 3).
-_COMPONENT_REGISTRY: dict[str, type] = {}
+# Each Wave 1+ component adds its own entries here in the same PR that
+# introduces the dataclass (CONTRACTS.md §2 rule 3).
+_COMPONENT_REGISTRY: dict[str, type] = {
+    "PlayerTagComponent": PlayerTagComponent,
+    "StatsComponent": StatsComponent,
+}
 
 _warned_unregistered: set[str] = set()
 
