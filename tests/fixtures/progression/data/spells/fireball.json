@@ -1,0 +1,5 @@
+{
+  "id": "fireball",
+  "display_name": "Fireball (fixture)",
+  "effects": [{"type": "damage", "amount": "3d6", "damage_type": "fire"}]
+}
