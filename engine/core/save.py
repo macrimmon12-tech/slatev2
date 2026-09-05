@@ -32,6 +32,13 @@ from engine.core.ecs import World, is_component
 # component's own module stays the source of truth for its component
 # classes, this dict just points at them so save/load can find them by
 # name.
+#
+# PlayerTagComponent/PositionComponent were independently introduced by
+# 02-ai-system.md (engine/systems/ai.py) to fill the same "no player-id
+# convention, no PositionComponent owner" gap 01-stats-combat.md and
+# 04-inventory-items-loot.md also hit — ai.py's versions are the ones
+# registered here since 02 merged first; other components import them
+# from ai.py rather than keeping a second, incompatible definition around.
 from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent  # noqa: E402
 from engine.systems.inventory import (  # noqa: E402
     InventoryComponent,
@@ -39,6 +46,7 @@ from engine.systems.inventory import (  # noqa: E402
     ItemPositionComponent,
 )
 from engine.systems.loot import FloorTileComponent, GoldComponent  # noqa: E402
+from engine.systems.stats import StatsComponent  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +62,7 @@ _COMPONENT_REGISTRY: dict[str, type] = {
     "ItemPositionComponent": ItemPositionComponent,
     "PlayerTagComponent": PlayerTagComponent,
     "PositionComponent": PositionComponent,
+    "StatsComponent": StatsComponent,
 }
 
 _warned_unregistered: set[str] = set()
