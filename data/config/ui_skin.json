@@ -70,6 +70,86 @@
           "on_click": { "event": "show_panel", "payload": { "panel_id": "main_menu" } }
         }
       ]
+    },
+    "dialog": {
+      "type": "Panel",
+      "id": "dialog",
+      "rect": { "x": "center", "y": "center", "w": 600, "h": 360 },
+      "background": "panel_bg",
+      "children": [
+        {
+          "type": "Label",
+          "id": "dialog_text",
+          "text": "{{text}}",
+          "rect": { "x": 20, "y": 20, "w": 560, "h": 100 }
+        },
+        {
+          "type": "List",
+          "id": "dialog_choices",
+          "items_key": "choices",
+          "rect": { "x": 20, "y": 140, "w": 560, "h": 190 },
+          "item_template": {
+            "type": "Button",
+            "text": "{{item.text}}",
+            "rect": { "x": 0, "y": 0, "w": 560, "h": 32 },
+            "on_click": {
+              "event": "dialog_choice_clicked",
+              "payload": {
+                "entity_id": "{{entity_id}}",
+                "target_id": "{{target_id}}",
+                "dialog_id": "{{dialog_id}}",
+                "node_id": "{{node_id}}",
+                "choice_index": "{{item.choice_index}}"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "shop": {
+      "type": "Panel",
+      "id": "shop",
+      "rect": { "x": "center", "y": "center", "w": 640, "h": 420 },
+      "background": "panel_bg",
+      "children": [
+        {
+          "type": "Label",
+          "id": "shop_gold_label",
+          "text": "Gold: {{gold}}",
+          "rect": { "x": 20, "y": 16, "w": 300, "h": 24 }
+        },
+        {
+          "type": "List",
+          "id": "shop_stock",
+          "items_key": "stock",
+          "rect": { "x": 20, "y": 50, "w": 600, "h": 300 },
+          "item_template": {
+            "type": "Button",
+            "text": "{{item.item_id}} x{{item.quantity}} - {{item.price}}g",
+            "rect": { "x": 0, "y": 0, "w": 600, "h": 32 },
+            "on_click": {
+              "event": "buy_item",
+              "payload": {
+                "entity_id": "{{entity_id}}",
+                "target_id": "{{target_id}}",
+                "shop_id": "{{shop_id}}",
+                "item": "{{item.item_id}}",
+                "price": "{{item.price}}"
+              }
+            }
+          }
+        },
+        {
+          "type": "Button",
+          "id": "btn_leave_shop",
+          "text": "Leave",
+          "rect": { "x": "center", "y": 370, "w": 150, "h": 32 },
+          "on_click": {
+            "event": "shop_leave_clicked",
+            "payload": { "entity_id": "{{entity_id}}", "shop_id": "{{shop_id}}" }
+          }
+        }
+      ]
     }
   }
 }
