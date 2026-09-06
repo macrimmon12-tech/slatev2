@@ -1,0 +1,1 @@
+loadfile("/etc/passwd")

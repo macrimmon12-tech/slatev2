@@ -1,0 +1,17 @@
+{
+  "id": "fixture_guaranteed_vault",
+  "display_name": "Fixture Guaranteed Vault",
+  "min_depth": 1,
+  "max_depth": 5,
+  "width": 5,
+  "height": 5,
+  "tiles": [
+    "#####",
+    "#...#",
+    "#.#.#",
+    "#...#",
+    "#####"
+  ],
+  "entity_spawns": [{"entity_id": "fixture_rat", "x": 1, "y": 1}],
+  "loot_spawns": [{"item_id": "fixture_potion", "x": 3, "y": 3}]
+}

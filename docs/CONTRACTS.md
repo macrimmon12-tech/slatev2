@@ -192,14 +192,17 @@ event.
 | `campaign_complete` | CampaignSystem | `campaign_id` | UI |
 | `game_complete` | CampaignSystem | — | UI |
 | `new_game_selected` / `load_game_selected` / `save_slot_selected` / `quit_selected` | main menu UI | varies | main.py |
-| `show_panel` | any system needing UI | `panel_id, data` | UIRuntime / Lua |
+| `show_panel` | any system needing UI | `panel_id, data, tree` (tree is optional — added by 10's `engine.create_panel`/`update_panel`, see 10-lua-scripting-layer.md §2.2) | UIRuntime / Lua |
+| `panel_closed` | Lua (`engine.destroy_panel`, 10-lua-scripting-layer.md §2.2) | `panel_id` | UIRuntime |
 | `message` | any system | `text, category` | UI message log |
 | `play_sound` | any system (or `"sound"` override key on any payload) | `sound_id, position \| None` | audio system |
 | `vfx_play` | combat/effects | `vfx_id, position, data` | anim system |
 | `ranged_attack_attempt` | combat | `attacker_id, target` | combat (ammo check) |
 | `ranged_attack_blocked` | combat | `attacker_id, reason` | UI/message |
 | `dialog_opened` / `dialog_choice_selected` / `dialog_closed` | Lua (`dialog_walker.lua`) | `entity_id, dialog_id, node_id` | UI (Lua panel) |
+| `dialog_choice_clicked` | UI (dialog panel's choice Button, `on_click`) | `entity_id, target_id, dialog_id, node_id, choice_index` | Lua (`dialog_walker.lua`) |
 | `shop_opened` / `buy_item` / `sell_item` / `trade_completed` / `shop_refreshed` | Lua (`shop.lua`) | `entity_id, shop_id, item, price` | UI (Lua panel) |
+| `shop_leave_clicked` | UI (shop panel's "Leave" Button, `on_click`) | `entity_id, shop_id` | Lua (`shop.lua`) |
 | `portal_target_changed` | Lua | `entity_id, target_floor` | CampaignSystem |
 
 If a component doc lists an event not in this table, treat that as a spec

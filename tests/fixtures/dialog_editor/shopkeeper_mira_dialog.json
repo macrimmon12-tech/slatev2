@@ -1,0 +1,57 @@
+{
+  "id": "shopkeeper_mira_dialog",
+  "start_node": "greet",
+  "nodes": {
+    "greet": {
+      "text": "Welcome, traveler. Looking to trade, or just passing through?",
+      "choices": [
+        {
+          "text": "Show me your wares.",
+          "action": "open_shop",
+          "shop_id": "mira_general_store"
+        },
+        {
+          "text": "Tell me about this place.",
+          "goto": "lore_1"
+        },
+        {
+          "text": "Just passing through.",
+          "goto": "end"
+        }
+      ]
+    },
+    "lore_1": {
+      "text": "This outpost has stood since the old kingdom fell. Most who settle here are running from something.",
+      "choices": [
+        {
+          "text": "Running from what?",
+          "goto": "lore_2",
+          "condition": "not campaign.mira_lore_told"
+        },
+        {
+          "text": "Interesting. Anyway...",
+          "goto": "greet"
+        }
+      ]
+    },
+    "lore_2": {
+      "text": "That's a story for another time, perhaps once you've earned my trust.",
+      "on_enter": [
+        {
+          "campaign_state": "mira_lore_told",
+          "value": true
+        }
+      ],
+      "choices": [
+        {
+          "text": "Fair enough.",
+          "goto": "greet"
+        }
+      ]
+    },
+    "end": {
+      "text": "Safe travels.",
+      "choices": []
+    }
+  }
+}

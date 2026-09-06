@@ -1,0 +1,11 @@
+{
+  "type": "Grid",
+  "id": "grid1",
+  "items_key": "cells",
+  "rect": { "x": 0, "y": 0, "w": 200, "h": 100 },
+  "item_template": {
+    "type": "Label",
+    "text": "{{item.label}}",
+    "rect": { "x": 0, "y": 0, "w": 50, "h": 20 }
+  }
+}

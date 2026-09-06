@@ -1,7 +1,9 @@
 {
   "id": "regeneration",
-  "name": "Regeneration",
-  "tick_effects": [
+  "display_name": "Regeneration",
+  "on_apply": [],
+  "on_tick": [
     {"type": "restore_hp", "amount": "1d4"}
-  ]
+  ],
+  "stat_modifiers": []
 }

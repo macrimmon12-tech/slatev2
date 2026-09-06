@@ -1,8 +1,9 @@
 {
   "id": "burn",
-  "name": "Burn",
-  "damage_type": "fire",
-  "tick_effects": [
+  "display_name": "Burn",
+  "on_apply": [],
+  "on_tick": [
     {"type": "damage", "amount": "1d4", "damage_type": "fire"}
-  ]
+  ],
+  "stat_modifiers": []
 }

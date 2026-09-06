@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "event_sounds": {
+    "damage_dealt": {
+      "default": "sfx/hit_generic.ogg",
+      "by_damage_type": {
+        "fire": "sfx/hit_fire.ogg"
+      }
+    },
+    "miss": { "default": "sfx/whiff.ogg" }
+  }
+}

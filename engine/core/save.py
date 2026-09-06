@@ -42,7 +42,9 @@ from engine.systems.status import StatusEffectsComponent
 # ai.py's versions are the ones registered here since 02 merged first;
 # engine/systems/combat.py and effects.py import them from ai.py rather
 # than keeping a second, incompatible definition around.
+from engine.lua.lua_host import LuaCampaignStateComponent, LuaFloorStateComponent
 from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent
+from engine.systems.interaction import InteractableComponent
 from engine.systems.progression import XpComponent
 from engine.systems.stats import StatsComponent
 
@@ -52,6 +54,9 @@ logger = logging.getLogger(__name__)
 # introduces the dataclass (CONTRACTS.md §2 rule 3).
 _COMPONENT_REGISTRY: dict[str, type] = {
     "AIComponent": AIComponent,
+    "InteractableComponent": InteractableComponent,
+    "LuaCampaignStateComponent": LuaCampaignStateComponent,
+    "LuaFloorStateComponent": LuaFloorStateComponent,
     "PlayerTagComponent": PlayerTagComponent,
     "PositionComponent": PositionComponent,
     "SpellCasterComponent": SpellCasterComponent,
