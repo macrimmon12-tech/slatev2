@@ -1,0 +1,11 @@
+{
+  "id": "affix_deep_only",
+  "display_name": "Deep Only",
+  "cost": 3,
+  "min_depth": 15,
+  "max_depth": 20,
+  "conflict_tags": [],
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 3}
+  ]
+}

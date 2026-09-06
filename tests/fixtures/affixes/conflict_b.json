@@ -1,0 +1,11 @@
+{
+  "id": "affix_conflict_b",
+  "display_name": "Conflict B",
+  "cost": 2,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": ["shared_conflict"],
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 2}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "ring_of_woe",
+  "display_name": "Ring of Woe",
+  "item_type": "ring",
+  "equippable": true,
+  "slot": "ring",
+  "min_depth": 1,
+  "max_depth": 20,
+  "set_id": null,
+  "consumable": false,
+  "cursed_chance": 1.0,
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 2}
+  ]
+}

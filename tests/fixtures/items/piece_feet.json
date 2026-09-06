@@ -1,0 +1,12 @@
+{
+  "id": "piece_feet",
+  "display_name": "Test Set Boots",
+  "item_type": "armor",
+  "equippable": true,
+  "slot": "feet",
+  "min_depth": 1,
+  "max_depth": 20,
+  "set_id": "testset",
+  "consumable": false,
+  "stat_modifiers": []
+}

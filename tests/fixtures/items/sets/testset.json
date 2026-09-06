@@ -1,0 +1,20 @@
+{
+  "id": "testset",
+  "display_name": "Test Set",
+  "tiers": [
+    {
+      "tier": 2,
+      "pieces_required": 2,
+      "stat_modifiers": [
+        {"stat": "armor", "operation": "add", "value": 100}
+      ]
+    },
+    {
+      "tier": 4,
+      "pieces_required": 4,
+      "stat_modifiers": [
+        {"stat": "armor", "operation": "add", "value": 999}
+      ]
+    }
+  ]
+}

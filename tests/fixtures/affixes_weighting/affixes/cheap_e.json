@@ -1,0 +1,11 @@
+{
+  "id": "affix_cheap_e",
+  "display_name": "Cheap e",
+  "cost": 1,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": [],
+  "stat_modifiers": [
+    {"stat": "dexterity", "operation": "add", "value": 1}
+  ]
+}

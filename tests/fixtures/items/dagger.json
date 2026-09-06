@@ -1,0 +1,15 @@
+{
+  "id": "dagger",
+  "display_name": "Dagger",
+  "item_type": "weapon",
+  "equippable": true,
+  "slot": "main_hand",
+  "min_depth": 1,
+  "max_depth": 5,
+  "set_id": null,
+  "consumable": false,
+  "stat_modifiers": [
+    {"stat": "damage_min", "operation": "add", "value": 1},
+    {"stat": "damage_max", "operation": "add", "value": 3}
+  ]
+}

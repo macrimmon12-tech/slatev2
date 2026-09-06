@@ -1,0 +1,11 @@
+{
+  "id": "affix_of_venom",
+  "display_name": "of Venom",
+  "cost": 5,
+  "min_depth": 3,
+  "max_depth": 20,
+  "conflict_tags": ["elemental_affix"],
+  "stat_modifiers": [
+    {"stat": "poison_damage_bonus", "operation": "add", "value": 4}
+  ]
+}

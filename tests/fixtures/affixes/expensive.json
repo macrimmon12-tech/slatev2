@@ -1,0 +1,11 @@
+{
+  "id": "affix_expensive",
+  "display_name": "Expensive Affix",
+  "cost": 10,
+  "min_depth": 1,
+  "max_depth": 20,
+  "conflict_tags": [],
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 10}
+  ]
+}

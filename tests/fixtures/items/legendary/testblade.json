@@ -1,0 +1,12 @@
+{
+  "id": "testblade",
+  "display_name": "Testblade",
+  "item_type": "weapon",
+  "equippable": true,
+  "slot": "main_hand",
+  "min_depth": 1,
+  "stat_modifiers": [
+    {"stat": "damage_min", "operation": "add", "value": 50},
+    {"stat": "damage_max", "operation": "add", "value": 75}
+  ]
+}

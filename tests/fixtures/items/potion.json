@@ -1,0 +1,13 @@
+{
+  "id": "potion",
+  "display_name": "Potion",
+  "item_type": "consumable",
+  "equippable": false,
+  "min_depth": 1,
+  "max_depth": 20,
+  "set_id": null,
+  "consumable": true,
+  "effects": [
+    {"type": "restore_hp", "amount": "1d4"}
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "floor_id": "fixture_floor_degenerate",
+  "description": "Zero eligible tiles (all walls) — place_floor_loot must no-op harmlessly, not raise.",
+  "tiles": [
+    {"x": 0, "y": 0, "walkable": false, "room_id": null},
+    {"x": 1, "y": 0, "walkable": false, "room_id": null}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "bad_item",
+  "display_name": "Bad Item",
+  "item_type": "weapon",
+  "equippable": true,
+  "slot": "main_hand",
+  "min_depth": 1,
+  "max_depth": 5,
+  "rarity": "epic",
+  "stat_modifiers": []
+}

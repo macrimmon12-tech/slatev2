@@ -1,0 +1,14 @@
+{
+  "id": "ironclad_greaves",
+  "display_name": "Ironclad Greaves",
+  "item_type": "armor",
+  "equippable": true,
+  "slot": "legs",
+  "min_depth": 5,
+  "max_depth": 20,
+  "set_id": "ironclad_set",
+  "consumable": false,
+  "stat_modifiers": [
+    {"stat": "armor", "operation": "add", "value": 2}
+  ]
+}

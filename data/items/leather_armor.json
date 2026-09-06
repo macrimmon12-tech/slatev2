@@ -1,0 +1,14 @@
+{
+  "id": "leather_armor",
+  "display_name": "Leather Armor",
+  "item_type": "armor",
+  "equippable": true,
+  "slot": "body",
+  "min_depth": 1,
+  "max_depth": 10,
+  "set_id": null,
+  "consumable": false,
+  "stat_modifiers": [
+    {"stat": "armor", "operation": "add", "value": 5}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "piece_head",
+  "display_name": "Test Set Helm",
+  "item_type": "armor",
+  "equippable": true,
+  "slot": "head",
+  "min_depth": 1,
+  "max_depth": 20,
+  "set_id": "testset",
+  "consumable": false,
+  "stat_modifiers": []
+}

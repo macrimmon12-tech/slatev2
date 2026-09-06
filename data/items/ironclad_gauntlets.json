@@ -1,0 +1,14 @@
+{
+  "id": "ironclad_gauntlets",
+  "display_name": "Ironclad Gauntlets",
+  "item_type": "armor",
+  "equippable": true,
+  "slot": "hands",
+  "min_depth": 5,
+  "max_depth": 20,
+  "set_id": "ironclad_set",
+  "consumable": false,
+  "stat_modifiers": [
+    {"stat": "strength", "operation": "add", "value": 2}
+  ]
+}
