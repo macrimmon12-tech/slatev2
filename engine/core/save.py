@@ -42,6 +42,7 @@ from engine.core.ecs import World, is_component
 # than keeping a second, incompatible definition around.
 from engine.lua.lua_host import LuaCampaignStateComponent, LuaFloorStateComponent
 from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent
+from engine.systems.interaction import InteractableComponent
 from engine.systems.progression import XpComponent
 from engine.systems.stats import StatsComponent
 
@@ -52,6 +53,7 @@ logger = logging.getLogger(__name__)
 # introduces the dataclass (CONTRACTS.md §2 rule 3).
 _COMPONENT_REGISTRY: dict[str, type] = {
     "AIComponent": AIComponent,
+    "InteractableComponent": InteractableComponent,
     "LuaCampaignStateComponent": LuaCampaignStateComponent,
     "LuaFloorStateComponent": LuaFloorStateComponent,
     "PlayerTagComponent": PlayerTagComponent,

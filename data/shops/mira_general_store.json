@@ -1,0 +1,14 @@
+{
+  "id": "mira_general_store",
+  "starting_gold": 150,
+  "restock_interval_floors": 3,
+  "price_formula": {
+    "buy": "base_price * 1.15",
+    "sell": "base_price * 0.5"
+  },
+  "stock_table": [
+    {"item_id": "healing_potion", "weight": 10, "restock_quantity": [3, 6]},
+    {"item_id": "long_sword", "weight": 3, "restock_quantity": [1, 1]},
+    {"item_id": "torch", "weight": 8, "restock_quantity": [4, 8]}
+  ]
+}

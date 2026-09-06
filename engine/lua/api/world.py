@@ -12,12 +12,37 @@ doc §2.2's own documented fallback this stays a no-op returning ``nil``
 until a caller injects ``ApiContext.get_tile_fn``. ``spawn_vfx``/
 ``play_sound`` need no Python system at all — they just emit the existing
 CONTRACTS.md §3.2 events.
+
+``get_registry_entry``/``eval_formula`` are a flagged addition from
+**11-npc-dialog-shop-content.md**, not part of this component's own
+original §2.2 surface. That doc's ``dialog_walker.lua``/``shop.lua`` need
+(a) a generic "read one content entry from any registry namespace by id"
+primitive — its own text anticipates this exact name
+(``engine.get_registry_entry("dialogs", dialog_id)``) but says to use
+whatever this component actually exposes and flag a mismatch; nothing
+under ``engine/lua/api/`` exposed *any* namespace-agnostic registry read to
+Lua as of 11's implementation, only namespace-specific internal calls
+(``lifecycle.py``'s ``registry.get("entities", ...)``,
+``dialog_shop.py``'s ``registry.get("configs", "ui_skin")``) — and (b) a
+way to evaluate a shop's ``price_formula`` strings (CONTRACTS.md §6's
+``eval_formula``) without reimplementing arithmetic parsing in Lua (Lua's
+own ``load``/``loadstring`` are nulled by this component's sandbox,
+component doc §2.1, so a content-authored formula string can't be handed
+to Lua's own evaluator). Both route straight through to the same
+``DataRegistry``/``engine.core.formula`` every Python system already uses
+-- no new content-reading or arithmetic path, just a Lua-reachable wrapper
+around an existing one. 11's PR adds these two functions here (the "world
+read/write group" already merged and wired into ``lua_host.py``) rather
+than adding a whole new API module + editing ``lua_host.py``'s import
+list, to keep the footprint to one file -- flagged in that PR for 10 to
+reconcile/relocate if a more fitting home is preferred later.
 """
 
 from __future__ import annotations
 
 from typing import Any, Callable
 
+from engine.core.formula import eval_formula as _eval_formula
 from engine.lua.convert import lua_to_python, python_to_lua
 from engine.lua.lua_host import ApiContext, warn_once
 
@@ -57,9 +82,37 @@ def build(ctx: ApiContext) -> dict[str, Callable]:
         position = (int(x), int(y)) if x is not None and y is not None else None
         ctx.event_bus.emit("play_sound", {"sound_id": sound_id, "position": position})
 
+    # -- 11-npc-dialog-shop-content.md's flagged addition (see module
+    # docstring) -------------------------------------------------------
+
+    def get_registry_entry(namespace: str, entry_id: str) -> Any:
+        if ctx.registry is None:
+            warn_once(
+                "lua_world_get_registry_entry_no_registry",
+                "engine.get_registry_entry: no DataRegistry wired; no-op",
+            )
+            return None
+        try:
+            entry = ctx.registry.get(namespace, entry_id)
+        except KeyError:
+            warn_once(
+                f"lua_world_get_registry_entry_unknown_namespace_{namespace}",
+                "engine.get_registry_entry: unknown namespace %r",
+                namespace,
+            )
+            return None
+        if entry is None:
+            return None
+        return python_to_lua(ctx.lua_runtime, entry)
+
+    def eval_formula(expr: str, context: Any = None) -> float:
+        return _eval_formula(str(expr), lua_to_python(context) or {})
+
     return {
         "get_tile": get_tile,
         "query_entities_in_radius": query_entities_in_radius,
         "spawn_vfx": spawn_vfx,
         "play_sound": play_sound,
+        "get_registry_entry": get_registry_entry,
+        "eval_formula": eval_formula,
     }

@@ -71,6 +71,23 @@ Questions §10, rather than silently guessed):
    ``Less`` -> ``"up"``, unrecognized key -> ``"down"``) consulted only for
    this one action — the only place this module inspects *which* physical
    key fired rather than just the action name.
+8. **Bump-into-interactable hook (11-npc-dialog-shop-content.md §1.1).**
+   That component doc's §1.1 requires the movement-collision check to emit
+   ``entity_interacted`` when the player bumps into an entity carrying
+   ``InteractableComponent`` — this module's merged code had no such check
+   (only the explicit ``interact`` key emitted it, via ``_handle_interact``
+   below). Since no other component has a reason to add this first, 11's
+   own PR adds it here: ``_handle_move`` now checks, via the injected
+   ``spatial_hash`` (absent = zero cost, exactly like every other
+   ``spatial_hash``-dependent feature in this module), whether the
+   destination tile holds an entity carrying ``InteractableComponent``
+   before applying the ``is_passable`` check; if so, it emits
+   ``entity_interacted`` with the documented ``{actor_id, target_id}``
+   shape and does not move onto that tile (bumping into an interactable
+   interacts with it rather than walking through it). A destination tile
+   occupied by a *non*-interactable entity (a monster, say) is untouched by
+   this check and falls through to the pre-existing ``is_passable``-driven
+   behavior — 11's PR does not add anything else to this file.
 7. **Key-name resolution.** The doc says key names are
    "pygame key-name strings (``pygame.key.key_code``-compatible)", but
    ``pygame.key.key_code`` does not actually accept the doc's own sample
@@ -99,6 +116,13 @@ from engine.core.spatial_hash import SpatialHash
 
 # See module docstring, gap 2.
 from engine.systems.ai import PlayerTagComponent, PositionComponent
+
+# Flagged cross-component addition (see module docstring, gap 8, and
+# 11-npc-dialog-shop-content.md §1.1): 11's own PR added this import and
+# the bump-into-interactable check in _handle_move below, since this
+# module's merged code only emitted entity_interacted for the explicit
+# interact key, not the movement-collision ("bump") case §1.1 documents.
+from engine.systems.interaction import InteractableComponent
 
 logger = logging.getLogger(__name__)
 
@@ -397,6 +421,21 @@ class InputHandler:
         entity_id, _tag, position = rows[0]
         return entity_id, position
 
+    def _find_interactable_at(self, position: Position, exclude: int) -> int | None:
+        """Entity id at ``position`` carrying ``InteractableComponent``, if
+        any (excluding ``exclude``, the mover itself). ``None`` if no
+        ``spatial_hash`` was injected — absence = zero cost, this check
+        simply doesn't run, matching every other ``spatial_hash``-gated
+        feature in this module (see module docstring, gap 8)."""
+        if self._spatial_hash is None:
+            return None
+        for candidate_id in sorted(self._spatial_hash.query_radius(position, 0)):
+            if candidate_id == exclude:
+                continue
+            if self._world.get_component(candidate_id, InteractableComponent) is not None:
+                return candidate_id
+        return None
+
     def _handle_move(self, action: str) -> None:
         resolved = self._resolve_player()
         if resolved is None:
@@ -405,6 +444,16 @@ class InputHandler:
         dx, dy = _MOVE_DELTAS[action]
         from_pos = (position.x, position.y)
         to_pos = (from_pos[0] + dx, from_pos[1] + dy)
+
+        # See module docstring, gap 8 (11-npc-dialog-shop-content.md §1.1):
+        # bumping into an interactable entity interacts with it instead of
+        # moving onto its tile.
+        interactable_target = self._find_interactable_at(to_pos, exclude=entity_id)
+        if interactable_target is not None:
+            self._event_bus.emit(
+                "entity_interacted", {"actor_id": entity_id, "target_id": interactable_target}
+            )
+            return
 
         if self._is_passable is not None and not self._is_passable(to_pos):
             return  # blocked -- silent no-op, not this component's call to log
