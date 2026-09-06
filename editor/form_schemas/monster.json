@@ -6,13 +6,21 @@
     {"key": "display_name", "label": "Display Name", "widget": "text"},
     {"key": "sprite_ref", "label": "Sprite", "widget": "sprite_picker"},
     {"key": "stats.hp", "label": "HP", "widget": "int", "min": 1, "default": 10},
+    {"key": "stats.max_hp", "label": "Max HP", "widget": "int", "min": 1, "default": 10},
     {"key": "stats.vision_range", "label": "Vision Range", "widget": "int", "min": 0, "default": 6},
+    {"key": "stats.dexterity", "label": "Dexterity", "widget": "int", "min": 0, "default": 5},
+    {"key": "stats.strength", "label": "Strength", "widget": "int", "min": 0, "default": 5},
+    {"key": "stats.intelligence", "label": "Intelligence", "widget": "int", "min": 0, "default": 1},
+    {"key": "combat.damage_min", "label": "Damage Min", "widget": "int", "min": 0, "default": 1},
+    {"key": "combat.damage_max", "label": "Damage Max", "widget": "int", "min": 0, "default": 2},
+    {"key": "xp_value", "label": "XP Value", "widget": "int", "min": 0, "default": 0},
     {
       "key": "ai.behavior",
       "label": "AI Behavior",
       "widget": "dropdown",
       "options": ["chaser", "ambusher", "patroller", "coward"]
     },
+    {"key": "ai.aggro_range", "label": "Aggro Range", "widget": "int", "min": 0, "default": 8},
     {
       "key": "loot_table.entries",
       "label": "Loot Table",

@@ -573,17 +573,25 @@ def _register_monster_data(entity_id: int, monster_data: dict) -> None:
             _monster_lookup_registered = True
 
 
+# CONTRACTS.md §6 left open whether StatsComponent.base keys for the
+# named ability scores are spelled out ("strength") or abbreviated
+# ("str") -- 15's own audit (docs/components/15-integration-verification.md
+# §2.1) found the two conventions had already drifted apart in the merged
+# codebase: 03's SpellSystem and 05's ProgressionSystem both settled on
+# spelled-out keys ("intelligence", "strength" -- see spells.py's own
+# `_STAT_ABBREVIATIONS`/`_stat_name_for_identifier` and this same
+# component's own PR notes), matching the canonical monster schema (spec
+# §4)'s "strength"/"dexterity" example, while only 01's CombatSystem.
+# resolve_hit and EffectResolver's formula context builder had defaulted
+# to a bare lowercase ("dex", "int"). Resolved here (and in
+# engine/systems/combat.py/effects.py, and CONTRACTS.md §6) in favor of
+# the spelled-out convention, since three independent components plus the
+# original spec already converged on it -- this monster stats block no
+# longer needs any aliasing at all, it just flows through as authored.
 def _build_monster_stats_base(monster_data: dict) -> dict[str, float]:
     stats_block = dict(monster_data.get("stats", {}))
     combat_block = monster_data.get("combat", {})
     base: dict[str, float] = dict(stats_block)
-    if "dexterity" in stats_block and "dex" not in base:
-        # 01-stats-combat.md's CombatSystem.resolve_hit reads the "dex" stat
-        # key; the canonical monster schema (spec §4) authors "dexterity".
-        # Alias both so real monster content actually drives hit chance --
-        # flagged in this component's PR as a naming mismatch for
-        # CONTRACTS.md to harmonize (not this component's schema to fix).
-        base["dex"] = stats_block["dexterity"]
     base.setdefault("damage_min", combat_block.get("damage_min", 0))
     base.setdefault("damage_max", combat_block.get("damage_max", 0))
     return base

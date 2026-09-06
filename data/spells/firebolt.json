@@ -11,7 +11,8 @@
     {"type": "noise", "radius": 6}
   ],
   "effects": [
-    {"type": "damage", "amount": "2d6 + (INT * 0.4)", "damage_type": "fire"},
+    {"type": "damage", "amount": "2d6", "damage_type": "fire"},
+    {"type": "damage", "amount": "INT * 0.4", "damage_type": "fire"},
     {"type": "vfx", "vfx_id": "fire_impact"}
   ]
 }

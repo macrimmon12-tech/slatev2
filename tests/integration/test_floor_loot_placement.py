@@ -10,8 +10,19 @@ actually exist in `world` at the claimed positions, on real floor tiles.
 component's own doc, verbatim): add a second version of this test (or
 extend it) that calls `06`'s real floor-generation entry point
 (`engine.systems.worldgen.generate_floor`) and re-runs this same assertion
-against real BSP output. Tracked here rather than lost — see the PR
-description for this component.
+against real BSP output. **Done** —
+`tests/integration/test_floor_generation_pipeline.py::
+test_real_floor_generation_produces_room_id_coverage_monsters_and_loot`
+now drives exactly that (real `generate_floor` -> real `place_floor_loot`
+-> real `ItemInstanceComponent`/`GoldComponent` entities at walkable
+positions), added as part of `15-integration-verification.md`'s pass
+rather than duplicated here since this fixture-floor test and that
+real-BSP test cover the same assertion shape against two different tile
+sources. That pass also found and fixed a real wiring gap this fixture
+floor's own `load_fixture_floor` masked: `place_floor_loot` read tile
+eligibility only via `FloorTileComponent` entities, which `06`'s real
+`generate_floor` never creates (see `engine/systems/loot.py`'s
+`_floor_tiles_from_worldgen` bridge).
 """
 
 from pathlib import Path

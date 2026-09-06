@@ -1,0 +1,31 @@
+{
+  "id": "goblin_shaman",
+  "display_name": "Goblin Shaman",
+  "sprite_ref": "goblin_shaman.png",
+  "xp_value": 25,
+  "stats": {
+    "hp": 9,
+    "max_hp": 9,
+    "mp": 20,
+    "max_mp": 20,
+    "dexterity": 4,
+    "strength": 2,
+    "intelligence": 8,
+    "vision_range": 7
+  },
+  "combat": {
+    "damage_min": 1,
+    "damage_max": 2
+  },
+  "ai": {
+    "behavior": "ambusher",
+    "aggro_range": 7,
+    "wake_radius": 4,
+    "spells": ["poison_bolt"]
+  },
+  "loot_table": {
+    "entries": [
+      {"item_id": "health_potion", "weight": 1, "quantity": [1, 1]}
+    ]
+  }
+}

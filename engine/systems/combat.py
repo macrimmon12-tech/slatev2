@@ -236,9 +236,13 @@ def resolve_hit(attacker_id: int, defender_id: int, world: World, event_bus: Eve
     config = _get_difficulty_config()
     depth = _current_depth(world)
 
+    # "dexterity" (spelled out), not "dex" -- see 15-integration-verification.md's
+    # resolution of CONTRACTS.md §6's stat-key naming ambiguity in favor of
+    # the spelled-out convention 03/05 and the canonical monster schema
+    # already use (worldgen.py's `_build_monster_stats_base` docstring).
     context = {
-        "ATTACKER_DEX": stats_system.get_stat(attacker_id, "dex", world),
-        "DEFENDER_DEX": stats_system.get_stat(defender_id, "dex", world),
+        "ATTACKER_DEX": stats_system.get_stat(attacker_id, "dexterity", world),
+        "DEFENDER_DEX": stats_system.get_stat(defender_id, "dexterity", world),
         "DEPTH": float(depth),
     }
     hit_chance = eval_formula(config["hit_chance_formula"], context)
@@ -280,11 +284,19 @@ def handle_potential_death(target_id: int, killer_id: int, world: World, event_b
     monster_data = _monster_data_for(target_id, world) or {}
     xp_value = monster_data.get("xp_value", 0)
     loot_entries = monster_data.get("loot_table", {}).get("entries", [])
+    is_boss = bool(monster_data.get("is_boss", False))
     position = effects.resolve_position(target_id, world)
 
     event_bus.emit("death", {"entity_id": target_id, "killer_id": killer_id, "xp_value": xp_value})
     event_bus.emit("entity_died", {"entity_id": target_id, "killer_id": killer_id})
-    event_bus.emit("loot_drop", {"position": position, "entries": loot_entries})
+    # `is_boss` (15-integration-verification.md addition -- see
+    # engine/systems/loot.py's `_on_loot_drop`): without it, 04's
+    # `resolve_loot_table(is_boss=...)` legendary-drop-on-boss-kill path
+    # (already built and unit-tested) could never actually fire from a
+    # real monster death -- the `loot_drop` payload had no way to say a
+    # kill was a boss kill at all, so the real call site hardcoded
+    # `is_boss=False` permanently. CONTRACTS.md §3.2 updated to match.
+    event_bus.emit("loot_drop", {"position": position, "entries": loot_entries, "is_boss": is_boss})
     world.destroy_entity(target_id)
 
 

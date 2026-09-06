@@ -181,6 +181,39 @@ def test_create_panel_stacks_in_creation_order():
     assert runtime._stack == ["a", "b"]
 
 
+def test_show_panel_event_with_an_ad_hoc_tree_builds_a_real_panel():
+    """15-integration-verification.md fix: `show_panel` carrying a `tree`
+    for a panel_id that isn't a pre-registered ui_skin.json screen used to
+    silently no-op (10-lua-scripting-layer.md's `engine.create_panel`
+    emits exactly this shape -- see engine/lua/api/panel.py's own module
+    docstring, which flagged the gap "for 08 to reconcile")."""
+    bus = EventBus()
+    runtime = UIRuntime(bus, None)
+
+    bus.emit(
+        "show_panel",
+        {"panel_id": "lua_ad_hoc_panel", "tree": _load("button.json"), "data": {"foo": "bar"}},
+    )
+
+    assert "lua_ad_hoc_panel" in runtime._panels
+    assert runtime._panels["lua_ad_hoc_panel"].data == {"foo": "bar"}
+
+
+def test_panel_closed_event_removes_the_panel():
+    """15-integration-verification.md fix: `panel_closed` (emitted by
+    10's `engine.destroy_panel`) had no subscriber here at all -- a
+    Lua-destroyed panel never actually left the stack."""
+    bus = EventBus()
+    runtime = UIRuntime(bus, None)
+    runtime.create_panel("btn1", _load("button.json"))
+    assert "btn1" in runtime._panels
+
+    bus.emit("panel_closed", {"panel_id": "btn1"})
+
+    assert "btn1" not in runtime._panels
+    assert "btn1" not in runtime._stack
+
+
 # ---------------------------------------------------------------------------
 # main_menu / save_select: pure ui_skin.json trees, zero special-cased code
 # ---------------------------------------------------------------------------

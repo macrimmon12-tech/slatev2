@@ -68,7 +68,9 @@ def test_resolve_hit_one_shot_kill_drives_full_death_pipeline():
 
     assert death_events == [{"entity_id": monster, "killer_id": player, "xp_value": 7}]
     assert entity_died_events == [{"entity_id": monster, "killer_id": player}]
-    assert loot_drop_events == [{"position": None, "entries": [{"item": "coin", "qty": 1}]}]
+    assert loot_drop_events == [
+        {"position": None, "entries": [{"item": "coin", "qty": 1}], "is_boss": False}
+    ]
 
     assert monster not in world.entities()
     assert world.get_component(monster, StatsComponent) is None

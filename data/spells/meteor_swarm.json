@@ -10,7 +10,8 @@
     {"type": "damage", "amount": "2d6", "damage_type": "fire"}
   ],
   "effects": [
-    {"type": "damage", "amount": "3d6 + (INT * 0.5)", "damage_type": "fire"},
+    {"type": "damage", "amount": "3d6", "damage_type": "fire"},
+    {"type": "damage", "amount": "INT * 0.5", "damage_type": "fire"},
     {"type": "vfx", "vfx_id": "meteor_impact"}
   ]
 }

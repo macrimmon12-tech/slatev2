@@ -38,8 +38,8 @@ def setup_function(_fn):
 def test_resolve_hit_miss_emits_miss_and_returns_false():
     world = World()
     bus = EventBus()
-    attacker = _make_entity(world, {"dex": 5, "damage_min": 3, "damage_max": 6})
-    defender = _make_entity(world, {"dex": 50, "hp": 20, "max_hp": 20})  # huge DEX gap -> low hit chance
+    attacker = _make_entity(world, {"dexterity": 5, "damage_min": 3, "damage_max": 6})
+    defender = _make_entity(world, {"dexterity": 50, "hp": 20, "max_hp": 20})  # huge DEX gap -> low hit chance
     received_miss = []
     bus.subscribe("miss", lambda payload: received_miss.append(payload))
     combat.set_rng(random.Random(1))  # a roll high enough to miss at this hit chance
@@ -53,8 +53,8 @@ def test_resolve_hit_miss_emits_miss_and_returns_false():
 def test_resolve_hit_hit_deals_damage_and_returns_true():
     world = World()
     bus = EventBus()
-    attacker = _make_entity(world, {"dex": 50, "damage_min": 5, "damage_max": 5})
-    defender = _make_entity(world, {"dex": 5, "hp": 20, "max_hp": 20})  # huge DEX gap -> high hit chance
+    attacker = _make_entity(world, {"dexterity": 50, "damage_min": 5, "damage_max": 5})
+    defender = _make_entity(world, {"dexterity": 5, "hp": 20, "max_hp": 20})  # huge DEX gap -> high hit chance
     received_damage = []
     bus.subscribe("damage_dealt", lambda payload: received_damage.append(payload))
     combat.set_rng(random.Random(0))
@@ -72,8 +72,8 @@ def test_resolve_hit_hit_chance_is_clamped_to_configured_max():
     world = World()
     bus = EventBus()
     # Absurd DEX gap pushes the raw formula result far above 1.0.
-    attacker = _make_entity(world, {"dex": 100000, "damage_min": 1, "damage_max": 1})
-    defender = _make_entity(world, {"dex": 0, "hp": 100, "max_hp": 100})
+    attacker = _make_entity(world, {"dexterity": 100000, "damage_min": 1, "damage_max": 1})
+    defender = _make_entity(world, {"dexterity": 0, "hp": 100, "max_hp": 100})
     rng = random.Random()
     rng.random = lambda: 0.96  # above hit_chance_max (0.95); would still "hit" if unclamped
     combat.set_rng(rng)
@@ -110,8 +110,8 @@ def test_depth_multipliers_falls_back_to_identity_for_unmatched_depth():
 def test_resolve_hit_applies_monster_damage_mult_for_non_player_attacker():
     world = World()
     bus = EventBus()
-    attacker = _make_entity(world, {"dex": 50, "damage_min": 10, "damage_max": 10})
-    defender = _make_entity(world, {"dex": 5, "hp": 100, "max_hp": 100})
+    attacker = _make_entity(world, {"dexterity": 50, "damage_min": 10, "damage_max": 10})
+    defender = _make_entity(world, {"dexterity": 5, "hp": 100, "max_hp": 100})
     combat.set_rng(random.Random(0))
 
     monkeypatched_config = dict(combat._DEFAULT_DIFFICULTY_CONFIG)
@@ -135,9 +135,9 @@ def test_resolve_hit_applies_monster_damage_mult_for_non_player_attacker():
 def test_resolve_hit_does_not_apply_monster_damage_mult_for_player_attacker():
     world = World()
     bus = EventBus()
-    attacker = _make_entity(world, {"dex": 50, "damage_min": 10, "damage_max": 10})
+    attacker = _make_entity(world, {"dexterity": 50, "damage_min": 10, "damage_max": 10})
     world.add_component(attacker, combat.PlayerTagComponent())
-    defender = _make_entity(world, {"dex": 5, "hp": 100, "max_hp": 100})
+    defender = _make_entity(world, {"dexterity": 5, "hp": 100, "max_hp": 100})
     combat.set_rng(random.Random(0))
 
     monkeypatched_config = dict(combat._DEFAULT_DIFFICULTY_CONFIG)

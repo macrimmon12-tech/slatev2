@@ -1,0 +1,28 @@
+{
+  "id": "goblin",
+  "display_name": "Goblin",
+  "sprite_ref": "goblin.png",
+  "xp_value": 15,
+  "stats": {
+    "hp": 12,
+    "max_hp": 12,
+    "dexterity": 6,
+    "strength": 4,
+    "intelligence": 1,
+    "vision_range": 6
+  },
+  "combat": {
+    "damage_min": 2,
+    "damage_max": 5
+  },
+  "ai": {
+    "behavior": "chaser",
+    "aggro_range": 8,
+    "wake_radius": 5
+  },
+  "loot_table": {
+    "entries": [
+      {"item_id": "health_potion", "weight": 1, "quantity": [1, 1]}
+    ]
+  }
+}

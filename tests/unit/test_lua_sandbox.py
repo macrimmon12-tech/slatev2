@@ -105,3 +105,52 @@ def test_malicious_script_fixture_caught_via_run_protected(host, fixture_name):
 
     assert result is None
     assert host.lua_runtime.eval("1 + 1") == 2
+
+
+# ---------------------------------------------------------------------------
+# 15-integration-verification.md §2.6's first Lua-boundary audit item: prove
+# ``engine.set_stat`` rejects a combat-derived stat name from *real Lua
+# source* going through the actual engine table (not just a direct Python
+# call to entity_api.build(ctx)["set_stat"], which tests/unit/
+# test_lua_api_entity.py already covers at the Python layer).
+# ---------------------------------------------------------------------------
+
+
+def test_set_stat_rejects_combat_derived_stat_from_real_lua_script(host):
+    from engine.lua.lua_host import LuaApiError
+    from engine.systems.stats import StatsComponent
+
+    entity_id = host.world.create_entity()
+    host.world.add_component(entity_id, StatsComponent(base={"hp": 10.0}, modifiers={}))
+
+    # lupa re-raises the *original* Python exception a callback raised
+    # (not a wrapped lua.LuaError) when called via execute()/eval()
+    # directly -- run_protected (the real call path content actually goes
+    # through, exercised by test_malicious_script_fixture_caught_via_run_protected
+    # above) is what turns this into a swallowed, logged no-op instead.
+    with pytest.raises(LuaApiError):
+        host.lua_runtime.execute(f'engine.set_stat({entity_id}, "hp", 999)')
+
+    # Rejected before any mutation -- the real StatsComponent is untouched.
+    assert host.world.get_component(entity_id, StatsComponent).base["hp"] == 10.0
+    # The host survives the rejection cleanly, same as the malicious-global
+    # fixtures above -- a content-authoring mistake is a normal error, not
+    # a crash, once driven through the real run_protected call path.
+    result = host.run_protected(
+        lambda: host.lua_runtime.execute(f'engine.set_stat({entity_id}, "hp", 999)')
+    )
+    assert result is None
+    assert host.lua_runtime.eval("1 + 1") == 2
+
+
+def test_set_stat_accepts_a_non_combat_stat_from_real_lua_script(host):
+    """Sanity companion: the rejection above is about the specific
+    combat-derived blocklist, not ``engine.set_stat`` itself being broken."""
+    from engine.systems.stats import StatsComponent
+
+    entity_id = host.world.create_entity()
+    host.world.add_component(entity_id, StatsComponent(base={}, modifiers={}))
+
+    host.lua_runtime.execute(f'engine.set_stat({entity_id}, "times_talked_to", 3)')
+
+    assert host.world.get_component(entity_id, StatsComponent).base["times_talked_to"] == 3.0
