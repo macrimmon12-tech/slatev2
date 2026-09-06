@@ -277,6 +277,13 @@ class UIRuntime:
         self._font: Any = None  # lazily created pygame.font.Font, or False if init failed
 
         self._show_panel_token = event_bus.subscribe("show_panel", self._on_show_panel)
+        # 15-integration-verification.md fix: 10-lua-scripting-layer.md's
+        # own module docstring (engine/lua/api/panel.py) already flagged
+        # both gaps below "for 08 to reconcile" -- CONTRACTS.md §3.2 lists
+        # `panel_closed` as consumed by UIRuntime, but nothing here ever
+        # subscribed to it, so a Lua `engine.destroy_panel` call never
+        # actually removed the panel from this runtime's stack.
+        event_bus.subscribe("panel_closed", self._on_panel_closed)
 
     # -- create/update/destroy -------------------------------------------
 
@@ -332,6 +339,19 @@ class UIRuntime:
             self._stack.append(panel_id)
             return
 
+        # 15-integration-verification.md fix: an ad-hoc `tree` on the
+        # payload (10-lua-scripting-layer.md's `engine.create_panel`,
+        # `tree` non-None per its own docstring) builds a real panel from
+        # it directly -- this used to fall through to the
+        # ui_skin.json-only lookup below and silently no-op for any
+        # panel_id that wasn't already a pre-registered screen (10's own
+        # engine/lua/api/panel.py module docstring flagged this exact gap
+        # "for 08 to reconcile"; reconciled here).
+        tree = payload.get("tree")
+        if tree is not None:
+            self.create_panel(panel_id, tree, data)
+            return
+
         template = self._screen_templates.get(panel_id)
         if template is not None:
             self.create_panel(panel_id, template, data)
@@ -340,6 +360,13 @@ class UIRuntime:
         # No tree registered anywhere for this panel_id — a missed frame,
         # not an error (doc §2.2 point 2 / CONTRACTS.md §2 rule 7).
         logger.debug("show_panel for unregistered panel_id %r ignored", panel_id)
+
+    def _on_panel_closed(self, payload: dict[str, Any] | None) -> None:
+        payload = payload or {}
+        panel_id = payload.get("panel_id")
+        if not panel_id:
+            return
+        self.destroy_panel(panel_id)
 
     # -- draw -------------------------------------------------------------
 

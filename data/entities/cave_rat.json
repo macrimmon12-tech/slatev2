@@ -1,0 +1,27 @@
+{
+  "id": "cave_rat",
+  "display_name": "Cave Rat",
+  "sprite_ref": "cave_rat.png",
+  "xp_value": 3,
+  "stats": {
+    "hp": 4,
+    "max_hp": 4,
+    "dexterity": 8,
+    "strength": 1,
+    "intelligence": 1,
+    "vision_range": 5
+  },
+  "combat": {
+    "damage_min": 1,
+    "damage_max": 2
+  },
+  "ai": {
+    "behavior": "coward",
+    "aggro_range": 6,
+    "wake_radius": 4,
+    "flee_hp_threshold": 0.5
+  },
+  "loot_table": {
+    "entries": []
+  }
+}

@@ -20,11 +20,30 @@ Boundaries documented per the component doc's own Test Plan:
     Button's ``on_click`` would emit (see ``data/config/ui_skin.json``'s
     "dialog" screen), so emitting it directly is a faithful drive of the
     real event contract, not a bypass of any hook this component owns.
-  - 04-inventory-items-loot.md isn't merged; ``ApiContext.inventory_fns``
-    is a fixture ledger (CONTRACTS.md §8's documented stubbing boundary),
-    not a mock of ``engine.grant_item``/``remove_item``/``has_item``
-    themselves -- those wrappers, and shop.lua's calls into them, are all
-    real.
+  - **15-integration-verification.md finding (escalated, not fixed here):**
+    ``04-inventory-items-loot.md`` has since merged, but it never built the
+    generic ``grant_item(entity_id, item_id, quantity, world, event_bus)``/
+    ``remove_item(...)``/``has_item(entity_id, item_id, quantity, world)``
+    API this component's own doc documents ``ApiContext.inventory_fns`` as
+    wrapping (§2.4: "checks the actor's gold via
+    ``engine.has_item(actor_id, "gold", price)``"), nor any per-actor gold
+    wallet concept -- 04's real ``InventorySystem`` only exposes
+    ``pickup``/``drop``/``use``/``equip``/``unequip``/``identify_*``/
+    ``remove_curse`` against its rarity/affix-bearing
+    ``ItemInstanceComponent`` model, and 04's own doc §9 separately flags
+    "gold as a loot concept" as still unresolved. Reconciling a
+    quantity/fungible "grant N of item X" and a gold wallet with 04's
+    per-instance item model is a real design decision (which field/
+    component represents gold on an actor; whether a "quantity" purchase
+    spawns N real instances or introduces stacking) that wasn't reviewed
+    as part of either component's spec, so it is filed as a follow-up
+    against `04-inventory-items-loot.md` (and `11`'s own doc, whose
+    `ApiContext.inventory_fns` contract this blocks) per
+    `ORCHESTRATION.md` §5 rather than freelanced here. ``ApiContext.
+    inventory_fns`` therefore remains this test's fixture ledger
+    (CONTRACTS.md §8) until that lands -- not a mock of a real
+    ``engine.grant_item``/``remove_item``/``has_item`` because no such
+    real implementation exists yet to mock.
   - Panel state is asserted via ``UIRuntime``'s own internal panel stack
     (no public accessor exists yet; reached directly, not mocked).
 """
@@ -65,8 +84,12 @@ def _pygame_headless():
 
 
 class _FakeInventory:
-    """Fixture stand-in for 04's InventorySystem, wired via
-    ``ApiContext.inventory_fns`` per CONTRACTS.md §8 -- 04 isn't merged."""
+    """Fixture stand-in for the generic grant/remove/has + gold-wallet API
+    11's own doc documents ``ApiContext.inventory_fns`` as wrapping, which
+    04's real (now-merged) ``InventorySystem`` never built -- see this
+    module's docstring's "15-integration-verification.md finding" note.
+    Not a CONTRACTS.md §8 "not merged yet" stub in the usual sense; kept
+    until the escalated follow-up against 04/11 lands."""
 
     def __init__(self) -> None:
         self.ledger: dict[int, dict[str, float]] = {}

@@ -5,19 +5,20 @@ the centerpiece requirement of `14-editor-visual-quest-dialog.md` (doc
 them — real file writes/reads on disk, a real ``QuestEditorMode``/
 ``DialogEditorMode`` object, sourced from real, loaded fixtures).
 
-Soft-dependency note (CONTRACTS.md §8): `10-lua-scripting-layer.md` has
-merged, but its shipped ``data/scripts/snippets.json`` only has 2 example
-snippets (trigger + action); this test's round-trip needs 3 distinct
-categories per doc §7, so it sources the palette from this component's own
-fixture (``tests/fixtures/quest_editor/snippets.json``, a superset adding
-one ``condition`` snippet, validated against `10`'s own schema in
-``tests/unit/test_quest_editor.py``) rather than waiting on `10` to add a
-third example. `11-npc-dialog-shop-content.md` has not merged; the Dialog
-Editor case below uses an equivalent fixture
-(``tests/fixtures/dialog_editor/shopkeeper_mira_dialog.json`` — the exact
-example content from that doc's own §5.1) per CONTRACTS.md §8's stub-and-
-extend allowance, and a local structural check standing in for `11`'s own
-(not-yet-existing) dialog schema validator.
+**15-integration-verification.md update**: `10-lua-scripting-layer.md`'s
+shipped ``data/scripts/snippets.json`` now carries a third (``condition``)
+example snippet — the exact ``condition_has_item`` entry this test's own
+fixture superset had already added per CONTRACTS.md §8 — so the round-trip
+below sources the palette straight from the real shipped file instead of
+this component's fixture copy. `11-npc-dialog-shop-content.md` has also
+merged, with a real dialog-schema validator
+(``engine.core.schemas.dialog_schema.validate_dialog_graph``) and its own
+real example content at ``data/dialogs/shopkeeper_mira_dialog.json``
+(byte-identical to this test's old fixture copy, §5.1's own example) — the
+Dialog Editor case below now loads that real file and validates against
+the real validator instead of a local structural stand-in (CONTRACTS.md
+§8: "delete your fixture/mock only if the integration test still passes
+against the real thing").
 """
 
 from __future__ import annotations
@@ -29,26 +30,19 @@ from editor.editor import Editor
 from editor.modes.dialog_editor import DialogEditorMode
 from editor.modes.quest_editor import QuestEditorMode, register_modes
 from editor.project import Project
+from engine.core.schemas.dialog_schema import validate_dialog_graph
 
-FIXTURE_SNIPPETS = Path(__file__).resolve().parents[1] / "fixtures" / "quest_editor" / "snippets.json"
-FIXTURE_DIALOG = Path(__file__).resolve().parents[1] / "fixtures" / "dialog_editor" / "shopkeeper_mira_dialog.json"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+REAL_SNIPPETS = REPO_ROOT / "data" / "scripts" / "snippets.json"
+REAL_DIALOG = REPO_ROOT / "data" / "dialogs" / "shopkeeper_mira_dialog.json"
+# Kept as the two names used throughout the rest of this file so the diff
+# against the pre-15 version stays minimal.
+FIXTURE_SNIPPETS = REAL_SNIPPETS
+FIXTURE_DIALOG = REAL_DIALOG
 
 
 def _validate_dialog_shape(data: dict) -> None:
-    """A local structural check standing in for `11-npc-dialog-shop-content.md`'s
-    own (not-yet-existing) dialog-schema validator (doc §5.1 field
-    vocabulary, read-only reference — this component does not own or
-    redefine that schema). Replace with `11`'s real validator once it
-    merges, per CONTRACTS.md §8."""
-    assert isinstance(data.get("id"), str) and data["id"]
-    assert isinstance(data.get("start_node"), str)
-    nodes = data.get("nodes")
-    assert isinstance(nodes, dict) and data["start_node"] in nodes
-    for node in nodes.values():
-        assert isinstance(node.get("text"), str)
-        for choice in node.get("choices", []):
-            assert isinstance(choice.get("text"), str)
-            assert ("goto" in choice) != ("action" in choice) or ("goto" not in choice and "action" not in choice)
+    validate_dialog_graph(data)
 
 
 def test_registration_seam_both_modes_slot_in_with_zero_editor_py_changes() -> None:

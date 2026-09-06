@@ -37,6 +37,23 @@ shape (`walkable`, `room_id`) closely enough that `06`'s `generate_floor`
 can populate them right before calling `place_floor_loot`. A floor with no
 matching `FloorTileComponent` entities is a harmless no-op (empty list),
 never an error — CONTRACTS.md §2 rule 7.
+
+**15-integration-verification.md bridge note**: `06`'s real `generate_floor`
+never materializes `FloorTileComponent` entities — it keeps its own
+`TileMap` in the module-level registry exposed by
+`engine.systems.worldgen.get_tilemap`/`register_tilemap`, exactly the
+"equivalent bridge" this docstring used to flag as still needed. Real BSP
+floors therefore always hit the "no matching `FloorTileComponent`
+entities" no-op path above unless something reads the other shape too.
+:func:`place_floor_loot` now falls back to `engine.systems.worldgen`'s
+`TileMap` (via a call-time import to avoid the circular
+top-of-module import `worldgen` already has on this module) when no
+`FloorTileComponent` entities exist for `floor_id`, so a real
+`generate_floor` call actually gets ambient loot placed instead of a
+silent, permanent no-op. `04`'s own fixture-floor path
+(:func:`load_fixture_floor`, which does populate real
+`FloorTileComponent` entities) is unaffected — that path is checked first
+and still wins when both are present.
 """
 
 from __future__ import annotations
@@ -367,6 +384,45 @@ def spawn_item_instance(
 # ---------------------------------------------------------------------------
 
 
+def _floor_tiles_from_worldgen(floor_id: str) -> list[FloorTileComponent]:
+    """Bridge to `06`'s real `TileMap` (module docstring's "15" note) —
+    a BSP-generated floor never has `FloorTileComponent` entities in
+    `world`, so without this bridge `place_floor_loot` silently no-ops on
+    every floor `engine.systems.worldgen.generate_floor` actually
+    produces. Deferred (call-time) import: `worldgen` imports
+    `place_floor_loot` from this module at import time (see its own
+    docstring's try/except shim), so importing `worldgen` back at this
+    module's top level would be circular; importing it here, inside the
+    function, breaks the cycle since both modules are already fully
+    loaded by the time any call happens. Absence = zero cost (CONTRACTS.md
+    §2 rule 7): no registered tilemap for `floor_id`, or `worldgen` not
+    importable at all, both just return an empty list rather than raise.
+    """
+    try:
+        from engine.systems import worldgen
+    except ImportError:
+        return []
+
+    tilemap = worldgen.get_tilemap(floor_id)
+    if tilemap is None:
+        return []
+
+    stairs_positions = {
+        pos for pos in (tilemap.stairs_down, tilemap.stairs_up) if pos is not None
+    }
+    return [
+        FloorTileComponent(
+            floor_id=floor_id,
+            x=x,
+            y=y,
+            walkable=tile.walkable,
+            room_id=tile.room_id,
+            is_stairs=(x, y) in stairs_positions,
+        )
+        for (x, y), tile in tilemap.tiles.items()
+    ]
+
+
 def _eligible_item_pool(registry: DataRegistry, depth: int) -> dict[str, dict]:
     """`eligible_item_pool: "all"` is the only pool mode required by this
     component's Definition of Done — any other configured value falls back
@@ -401,6 +457,11 @@ def place_floor_loot(world: World, floor_id: str, depth: int) -> list[dict]:
     rng = random.Random()
 
     tiles = [tile for _entity_id, tile in world.query(FloorTileComponent) if tile.floor_id == floor_id]
+    if not tiles:
+        # No fixture-style FloorTileComponent entities for this floor --
+        # fall back to 06's real TileMap (see module docstring's bridge
+        # note) rather than silently no-op'ing on every real BSP floor.
+        tiles = _floor_tiles_from_worldgen(floor_id)
     eligible_tiles = [tile for tile in tiles if tile.walkable and tile.room_id is not None and not tile.is_stairs]
     if not eligible_tiles:
         return []
@@ -533,7 +594,12 @@ class LootSystem:
         resolved = resolve_loot_table(
             {"entries": entries},
             self.current_depth,
-            is_boss=False,
+            # 15-integration-verification.md fix: read from the real
+            # `loot_drop` payload (see combat.py's `handle_potential_death`)
+            # instead of hardcoding False -- without this, a boss's
+            # guaranteed-legendary-first roll (already built, already unit
+            # tested in isolation) could never fire from a real death.
+            is_boss=bool(payload.get("is_boss", False)),
             registry=self.registry,
             spawned_uniques=self.spawned_uniques,
             rng=self.rng,

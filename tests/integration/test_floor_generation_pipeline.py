@@ -5,47 +5,39 @@ spawning + the §1.1 ``place_floor_loot`` wiring call), and a second case
 driving ``FloorManager``/``CampaignSystem`` through real ``stair_use``
 events for a floor A -> B -> A round trip.
 
-``04-inventory-items-loot.md`` (``place_floor_loot``) is not merged in this
-checkout. Per CONTRACTS.md §8, this test exercises the module's own
-documented fallback (a real, harmless no-op — see
-``engine/systems/worldgen.py``'s module docstring) for the "wiring call
-actually happens" half of the assertion, and separately monkeypatches
-``worldgen.place_floor_loot`` to a fixture stand-in that creates real
-entities at the returned positions (rather than mocking `generate_floor`
-itself) for the "real items land on the map" half — proving the pipeline
-threads `place_floor_loot`'s return value through to real world state.
-**When 04 merges, replace the monkeypatched stand-in with the real
-`place_floor_loot`/`ItemInstanceComponent` and re-run this same shape of
-assertion against it** (flagged here and in this component's PR so it
-isn't lost, matching 04-inventory-items-loot.md §8's own anticipation of
-this follow-up).
+**15-integration-verification.md update**: `04-inventory-items-loot.md` has
+now merged, so this re-points the "real items land on the map" half of the
+assertion at the real `place_floor_loot`/`ItemInstanceComponent`/
+`GoldComponent` instead of the fixture stand-in this test used to
+monkeypatch in — per this component doc's own anticipation of exactly this
+follow-up. Doing so surfaced a genuine cross-component wiring gap (the
+"damage vs damage_dealt" class of bug CONTRACTS.md §7.1 generalizes):
+`place_floor_loot` read tile eligibility exclusively via
+`FloorTileComponent` ECS entities (04's documented convention), but `06`'s
+real `generate_floor` never creates those — it keeps its own `TileMap` in
+`engine.systems.worldgen`'s module-level registry, exactly the "equivalent
+bridge" `04`'s own `loot.py` docstring flagged as still needed. Fixed here
+as a small, in-scope wiring fix (`engine/systems/loot.py`'s
+`_floor_tiles_from_worldgen` bridge) rather than filed as a follow-up,
+since both docs already agreed on the *behavior* (scatter loot on eligible
+floor tiles) and only the tile-access *shape* had drifted.
 """
 
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
 from pathlib import Path
 
 from engine.core.ecs import World
 from engine.core.events import EventBus
 from engine.core.registry import DataRegistry
-from engine.systems import campaign, worldgen
+from engine.systems import campaign, loot, worldgen
 from engine.systems.ai import AIComponent, PlayerTagComponent, PositionComponent
+from engine.systems.inventory import ItemInstanceComponent, ItemPositionComponent
+from engine.systems.loot import GoldComponent
 from engine.systems.stats import StatsComponent
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "worldgen"
-
-
-@dataclass
-class _FixtureItemMarker:
-    """Local stand-in for 04's `ItemInstanceComponent` (not merged in this
-    checkout) -- see module docstring. Deliberately NOT decorated with
-    `@component`/registered in `engine.core.save._COMPONENT_REGISTRY`: it's
-    a test-only marker (`World.query`/`add_component` don't require the
-    marker), and this test never saves/loads it."""
-
-    item_base_id: str
 
 
 def _fixture_registry() -> DataRegistry:
@@ -57,27 +49,19 @@ def _fixture_registry() -> DataRegistry:
 def _reset():
     worldgen.reset_module_state()
     campaign.set_data_registry(None)
+    loot.set_active_registry(None)
+    loot.set_active_spawned_uniques(set())
 
 
-def test_real_floor_generation_produces_room_id_coverage_monsters_and_loot(monkeypatch):
+def test_real_floor_generation_produces_room_id_coverage_monsters_and_loot():
     _reset()
     registry = _fixture_registry()
     worldgen.set_data_registry(registry)
-
-    # Fixture stand-in for 04's place_floor_loot (§1.1/§8) -- creates real
-    # entities at the positions it returns, so downstream assertions check
-    # genuine world state, not a mock call log.
-    def fixture_place_floor_loot(world, floor_id, depth):
-        placements = []
-        candidates = [pos for pos, tile in worldgen.get_tilemap(floor_id).tiles.items() if tile.walkable]
-        for i, pos in enumerate(candidates[:3]):
-            entity_id = world.create_entity()
-            world.add_component(entity_id, PositionComponent(*pos))
-            world.add_component(entity_id, _FixtureItemMarker(item_base_id="fixture_potion"))
-            placements.append({"instance_id": f"item_{i}", "item_base_id": "fixture_potion", "position": pos})
-        return placements
-
-    monkeypatch.setattr(worldgen, "place_floor_loot", fixture_place_floor_loot)
+    # §1.1's wiring call is only real end-to-end once 04's LootSystem has a
+    # registry to read the floor-loot config/item pool from (see
+    # loot.py's module docstring's "Registry access" wiring note) -- this
+    # is the real place_floor_loot now, not a monkeypatched stand-in.
+    loot.set_active_registry(registry)
 
     world = World()
     bus = EventBus()
@@ -119,13 +103,23 @@ def test_real_floor_generation_produces_room_id_coverage_monsters_and_loot(monke
         assert world.get_component(entity_id, StatsComponent) is not None
     assert all(evt["kind"] == "fixture_rat" for evt in spawned_events)
 
-    # (d) real item entities exist on the tile map afterward, at walkable
-    # positions, via the (fixture-standing-in-for-04) place_floor_loot call
-    # that generate_floor actually invoked.
-    item_rows = world.query(_FixtureItemMarker)
-    assert len(item_rows) == 3
-    for entity_id, marker in item_rows:
-        position = world.get_component(entity_id, PositionComponent)
+    # (d) real ambient floor loot (04's real place_floor_loot, real
+    # ItemInstanceComponent/GoldComponent entities -- not a fixture stand-in)
+    # actually lands on the generated tile map, at walkable positions, via
+    # the §1.1 wiring call generate_floor made for real. This is the exact
+    # "damage vs damage_dealt" class of cross-component drift 15's own doc
+    # calls out: 04's place_floor_loot only read tile eligibility via
+    # FloorTileComponent entities, which 06's real generate_floor never
+    # creates -- see engine/systems/loot.py's bridge fix.
+    item_rows = world.query(ItemInstanceComponent)
+    gold_rows = world.query(GoldComponent)
+    assert item_rows or gold_rows
+    for entity_id, _item in item_rows:
+        position = world.get_component(entity_id, ItemPositionComponent)
+        assert position is not None
+        assert tilemap.tiles[(position.x, position.y)].walkable is True
+    for entity_id, _gold in gold_rows:
+        position = world.get_component(entity_id, ItemPositionComponent)
         assert position is not None
         assert tilemap.tiles[(position.x, position.y)].walkable is True
 

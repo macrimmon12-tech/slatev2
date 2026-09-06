@@ -76,6 +76,31 @@ def set_rng(rng: random.Random) -> None:
 
 
 # ---------------------------------------------------------------------------
+# DataRegistry access (15-integration-verification.md fix -- see
+# _handle_apply_status below)
+# ---------------------------------------------------------------------------
+
+_data_registry = None
+
+
+def set_data_registry(registry) -> None:
+    """Lets whichever code wires up ``main.py`` hand this module the loaded
+    ``DataRegistry``, the same "call once at boot" convention
+    ``combat.set_data_registry``/``loot.set_active_registry``/
+    ``worldgen.set_data_registry`` already establish elsewhere in this
+    codebase. Without this, :func:`_handle_apply_status` had no way to
+    give the ``StatusEffectsSystem`` it constructs a registry at all
+    (CONTRACTS.md §7.1's "wired, not just built" gate, generalized: a
+    real ``apply_status`` effect resolved through this module always
+    silently lost every status's ``on_apply``/``on_tick``/
+    ``stat_modifiers`` -- e.g. poison never actually ticked damage or
+    applied its DEX debuff -- because the ad hoc ``StatusEffectsSystem``
+    it built every call had no registry to look the status up in)."""
+    global _data_registry
+    _data_registry = registry
+
+
+# ---------------------------------------------------------------------------
 # Position resolution (see module docstring)
 # ---------------------------------------------------------------------------
 
@@ -142,6 +167,31 @@ def _log_missing_dependency_once(key: str, message: str) -> None:
 # ---------------------------------------------------------------------------
 
 
+# CONTRACTS.md §6 left open whether a formula identifier's stat name is
+# abbreviated ("dex") or spelled out ("dexterity"). Resolved by
+# 15-integration-verification.md in favor of spelled out -- 03's
+# SpellSystem and 05's ProgressionSystem both already settled there (see
+# spells.py's own `_STAT_ABBREVIATIONS`/`_stat_name_for_identifier`,
+# duplicated here rather than imported since CONTRACTS.md §2 rule 4 keeps
+# systems from importing each other's modules for plain logic), matching
+# the canonical monster/item content schema (spec §4/§5) too. A bare
+# lowercase (e.g. "MAX_HP" -> "max_hp") is still the fallback for anything
+# with no ability-score abbreviation entry.
+_STAT_ABBREVIATIONS: dict[str, str] = {
+    "INT": "intelligence",
+    "STR": "strength",
+    "DEX": "dexterity",
+    "CON": "constitution",
+    "WIS": "wisdom",
+    "CHA": "charisma",
+    "LUK": "luck",
+}
+
+
+def _stat_name_for_identifier(identifier: str) -> str:
+    return _STAT_ABBREVIATIONS.get(identifier, identifier.lower())
+
+
 def _extract_formula_identifiers(expr: str) -> set[str]:
     try:
         tree = ast.parse(expr, mode="eval")
@@ -158,7 +208,7 @@ def _build_formula_context(
     expr: str, source_id: int, world: World, stats_system: StatsSystem
 ) -> dict[str, float]:
     return {
-        name: stats_system.get_stat(source_id, name.lower(), world)
+        name: stats_system.get_stat(source_id, _stat_name_for_identifier(name), world)
         for name in _extract_formula_identifiers(expr)
     }
 
@@ -413,7 +463,7 @@ def _handle_apply_status(effect, source_id, target_id, world, event_bus, positio
     effect_id = effect.get("effect_id")
     duration = effect.get("duration", 0)
     magnitude = effect.get("magnitude")
-    StatusEffectsSystem(world, event_bus).apply(
+    StatusEffectsSystem(world, event_bus, registry=_data_registry).apply(
         target_id, effect_id, duration, magnitude, world, event_bus
     )
 

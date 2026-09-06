@@ -1,0 +1,36 @@
+{
+  "id": "keep_boss",
+  "display_name": "The Sunken Keep's Warden",
+  "sprite_ref": "keep_boss.png",
+  "xp_value": 200,
+  "is_boss": true,
+  "stats": {
+    "hp": 80,
+    "max_hp": 80,
+    "dexterity": 10,
+    "strength": 14,
+    "intelligence": 6,
+    "vision_range": 8
+  },
+  "combat": {
+    "damage_min": 6,
+    "damage_max": 14
+  },
+  "ai": {
+    "behavior": "chaser",
+    "aggro_range": 10,
+    "wake_radius": 6,
+    "behavior_phases": [
+      {
+        "trigger": {"type": "hp_below", "value": 0.3},
+        "behavior": "coward",
+        "one_shot": true
+      }
+    ]
+  },
+  "loot_table": {
+    "entries": [
+      {"item_id": "sunfang", "weight": 1, "quantity": [1, 1]}
+    ]
+  }
+}

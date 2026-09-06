@@ -163,7 +163,7 @@ event.
 | `damage_dealt` | EffectResolver | `target_id, amount, damage_type, source_id, position` | renderer/anim, combat, quest hooks |
 | `miss` | combat | `attacker_id, defender_id` | renderer/anim, message log |
 | `death` | combat (pre-`entity_died`, XP-relevant) | `entity_id, killer_id, xp_value` | ProgressionSystem |
-| `loot_drop` | combat/loot | `position, entries` | LootSystem placement, message log |
+| `loot_drop` | combat/loot | `position, entries, is_boss` | LootSystem placement, message log |
 | `item_pickup` | inventory | `entity_id, item_instance_id` | UI, journal |
 | `item_dropped` | inventory | `entity_id, item_instance_id, position` | worldgen/loot |
 | `item_used` | inventory | `entity_id, item_instance_id` | EffectResolver |
@@ -278,6 +278,25 @@ eval_formula(expr: str, context: dict) -> float                  # "0.4 - (INT *
 UPPERCASE (`INT`, `STR`, `DEX`, ...). Any system introducing a new formula
 field in its JSON schema must document the context keys it supplies in its
 own component doc.
+
+**`StatsComponent.base` key convention (resolved by
+`15-integration-verification.md`, §2.1 audit):** this doc originally left
+open whether the ability-score keys backing `INT`/`STR`/`DEX`/... are
+themselves abbreviated (`"dex"`) or spelled out (`"dexterity"`). By the
+time 15 ran, `03-spells-status.md`'s `SpellSystem` and
+`05-progression-vision.md`'s `ProgressionSystem` had both already
+independently settled on the spelled-out form, matching the canonical
+monster/item content schema's own illustrative examples (spec §4/§5) —
+only `01-stats-combat.md`'s `CombatSystem.resolve_hit` and
+`EffectResolver`'s generic formula-context builder had defaulted to a bare
+lowercase instead. **Spelled out wins**: `INT` → `"intelligence"`, `STR` →
+`"strength"`, `DEX` → `"dexterity"`, `CON` → `"constitution"`, `WIS` →
+`"wisdom"`, `CHA` → `"charisma"`, `LUK` → `"luck"`; any other identifier
+falls back to a plain lowercase (`MAX_HP` → `"max_hp"`). `01`'s two
+holdouts were fixed to match as part of 15's integration pass
+(`engine/systems/combat.py`'s `resolve_hit`, `engine/systems/effects.py`'s
+`_build_formula_context`) — content and future components should author
+`StatsComponent.base`/monster `"stats"` blocks with the spelled-out names.
 
 ---
 
