@@ -14,6 +14,8 @@ from engine.systems.inventory import (
     ItemInstanceComponent,
     ItemPositionComponent,
     assert_no_rarity_field,
+    identify_instance,
+    remove_curse,
     reset_identified_base_ids,
 )
 
@@ -286,6 +288,64 @@ def test_cursed_item_auto_identifies_and_locks_on_equip_then_refuses_unequip(reg
     # Locked — unequip must refuse, no state change.
     assert inv_sys.unequip(actor, "ring") is False
     assert inv.equipped["ring"] == instance_id
+
+
+def test_remove_curse_clears_cursed_reveals_and_unlocks(registry):
+    world = World()
+    bus = EventBus()
+    stats = FakeStatsSystem()
+    inv_sys = InventorySystem(world, bus, registry, stats_system=stats)
+    actor = _make_actor(world)
+    instance_id = _spawn_item(world, "ring_of_woe", cursed=True)
+    inv = world.get_component(actor, InventoryComponent)
+    inv.item_instance_ids.append(instance_id)
+    inv_sys.equip(actor, instance_id, "ring")
+
+    _eid, item = inv_sys._find_item(instance_id)
+    assert item.locked is True  # equip auto-locked it, per the curse test above
+
+    inv_sys.remove_curse(instance_id)
+
+    assert item.cursed is False
+    assert item.curse_identified is True
+    assert item.locked is False
+    # A cleared curse actually un-refuses unequip now.
+    assert inv_sys.unequip(actor, "ring") is True
+
+
+def test_remove_curse_is_a_noop_for_an_unknown_instance(registry):
+    world = World()
+    bus = EventBus()
+    inv_sys = InventorySystem(world, bus, registry)
+
+    inv_sys.remove_curse("does-not-exist")  # must not raise
+
+
+def test_module_level_identify_instance_and_remove_curse_match_effects_py_call_boundary():
+    """01-stats-combat.md's engine/systems/effects.py documents and calls
+    these as bare module-level functions taking (item_instance_id, world,
+    event_bus) — not routed through an InventorySystem instance. Exercise
+    that exact call shape directly, independent of the class."""
+    world = World()
+    bus = EventBus()
+    instance_id = _spawn_item(world, "ring_of_woe", cursed=True)
+
+    identify_instance(instance_id, world, bus)
+    for _eid, item in world.query(ItemInstanceComponent):
+        if item.instance_id == instance_id:
+            assert item.curse_identified is True
+            assert item.cursed is True  # identify reveals, doesn't clear
+
+    remove_curse(instance_id, world, bus)
+    for _eid, item in world.query(ItemInstanceComponent):
+        if item.instance_id == instance_id:
+            assert item.cursed is False
+
+    # Falsy/unknown ids are no-ops, per each function's own docstring.
+    identify_instance(None, world, bus)
+    identify_instance("nope", world, bus)
+    remove_curse(None, world, bus)
+    remove_curse("nope", world, bus)
 
 
 def test_identify_type_marks_every_instance_of_base_id_globally(registry):

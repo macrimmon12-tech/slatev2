@@ -252,7 +252,14 @@ def test_script_effect_is_a_noop_without_lua_host():
     # must not raise
 
 
-def test_identify_item_is_a_noop_without_inventory_system():
+def test_identify_item_is_a_noop_for_an_unknown_item_instance():
+    # 04-inventory-items-loot.md has merged, so this now exercises the real
+    # engine.systems.inventory.identify_instance(item_instance_id, world,
+    # event_bus) call boundary documented in the handler below — "abc"
+    # matches no real ItemInstanceComponent in this bare world, so it's
+    # still a no-op, just for a different reason than "module not merged
+    # yet" (per CONTRACTS.md §8: replace a stubbed-dependency test with one
+    # against the real thing once it lands).
     world = World()
     bus = EventBus()
     source = world.create_entity()
@@ -262,7 +269,7 @@ def test_identify_item_is_a_noop_without_inventory_system():
     # must not raise
 
 
-def test_remove_curse_is_a_noop_without_inventory_system():
+def test_remove_curse_is_a_noop_for_an_unknown_item_instance():
     world = World()
     bus = EventBus()
     source = world.create_entity()
