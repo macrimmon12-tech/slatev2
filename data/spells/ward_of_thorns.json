@@ -1,0 +1,16 @@
+{
+  "id": "ward_of_thorns",
+  "display_name": "Ward of Thorns",
+  "targeting_mode": "targeted_tile",
+  "mp_cost": 5,
+  "int_requirement": 0,
+  "fail_chance_formula": "max(0.0, 0.1 - (INT * 0.01))",
+  "aoe_radius": 0,
+  "backfire_effects": [
+    {"type": "noise", "radius": 4}
+  ],
+  "effects": [
+    {"type": "noise", "radius": 5},
+    {"type": "vfx", "vfx_id": "thorn_burst"}
+  ]
+}

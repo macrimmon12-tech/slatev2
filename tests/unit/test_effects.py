@@ -13,7 +13,7 @@ from engine.core.events import EventBus
 from engine.systems import effects
 from engine.systems.stats import StatsComponent
 
-FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "effects"
+FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "effect_schema_samples"
 
 
 @pytest.fixture(autouse=True)

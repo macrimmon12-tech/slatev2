@@ -1,0 +1,11 @@
+{
+  "id": "blessed",
+  "display_name": "Blessed",
+  "on_apply": [
+    {"type": "restore_hp", "amount": "1d4"}
+  ],
+  "on_tick": [],
+  "stat_modifiers": [
+    {"stat": "armor", "operation": "add", "value": 3}
+  ]
+}
