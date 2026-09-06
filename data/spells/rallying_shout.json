@@ -1,0 +1,15 @@
+{
+  "id": "rallying_shout",
+  "display_name": "Rallying Shout",
+  "targeting_mode": "aoe_self",
+  "mp_cost": 8,
+  "int_requirement": 2,
+  "fail_chance_formula": "max(0.0, 0.1 - (INT * 0.01))",
+  "aoe_radius": 3,
+  "backfire_effects": [
+    {"type": "damage", "amount": "1d4", "damage_type": "arcane"}
+  ],
+  "effects": [
+    {"type": "stat_modifier", "stat": "strength", "op": "add", "value": 2, "duration": 0}
+  ]
+}

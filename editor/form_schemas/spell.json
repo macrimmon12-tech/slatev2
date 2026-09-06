@@ -1,0 +1,25 @@
+{
+  "content_type": "spell",
+  "namespace": "spells",
+  "fields": [
+    {"key": "id", "label": "ID", "widget": "text", "required": true},
+    {"key": "display_name", "label": "Display Name", "widget": "text"},
+    {"key": "sprite_ref", "label": "Icon", "widget": "sprite_picker"},
+    {"key": "cost.mana", "label": "Mana Cost", "widget": "int", "min": 0, "default": 0},
+    {
+      "key": "targeting_mode",
+      "label": "Targeting Mode",
+      "widget": "dropdown",
+      "options": ["self", "tile", "entity", "line"]
+    },
+    {
+      "key": "effects",
+      "label": "Effects",
+      "widget": "effect_array",
+      "columns": [
+        {"key": "type", "label": "Type", "widget": "id_picker_or_typed", "options_from_namespace": "effects"},
+        {"key": "value", "label": "Value", "widget": "text"}
+      ]
+    }
+  ]
+}

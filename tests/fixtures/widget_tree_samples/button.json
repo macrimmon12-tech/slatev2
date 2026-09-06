@@ -1,0 +1,7 @@
+{
+  "type": "Button",
+  "id": "btn1",
+  "text": "Click",
+  "rect": { "x": 0, "y": 0, "w": 80, "h": 20 },
+  "on_click": { "event": "test_button_clicked", "payload": { "foo": "bar" } }
+}

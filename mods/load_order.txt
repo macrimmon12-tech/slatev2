@@ -1,0 +1,18 @@
+# mods/load_order.txt
+#
+# One mod entry per line: either a .pak/.pkd archive filename (relative to
+# this mods/ directory) or an unpacked mod folder name under mods/<name>/.
+# Blank lines and lines starting with "#" are ignored.
+#
+# Top of file = lowest priority; later lines override earlier ones on a
+# conflicting id. Loose files (see CONTRACTS.md §4) always win over every
+# entry here regardless of position.
+#
+# Example:
+# balance_tweaks.pak
+# new_monsters.pak
+# new_monsters_assets.pkd
+#
+# A fresh checkout ships with zero mods active -- this file is intentionally
+# empty of real entries so the game boots identically to a no-mod-system
+# install.

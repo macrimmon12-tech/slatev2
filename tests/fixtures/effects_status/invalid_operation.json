@@ -1,0 +1,9 @@
+{
+  "id": "bad_status",
+  "display_name": "Bad Status",
+  "on_apply": [],
+  "on_tick": [],
+  "stat_modifiers": [
+    {"stat": "dexterity", "operation": "subtract", "value": -2}
+  ]
+}

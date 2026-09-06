@@ -1,8 +1,11 @@
 {
   "id": "poisoned",
-  "name": "Poisoned",
-  "damage_type": "poison",
-  "tick_effects": [
-    {"type": "damage", "amount": "1d3", "damage_type": "poison"}
+  "display_name": "Poisoned",
+  "on_apply": [],
+  "on_tick": [
+    {"type": "damage", "amount": "1d4", "damage_type": "poison"}
+  ],
+  "stat_modifiers": [
+    {"stat": "dexterity", "operation": "add", "value": -2}
   ]
 }

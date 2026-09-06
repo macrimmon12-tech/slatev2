@@ -1,0 +1,13 @@
+{
+  "id": "poison_bolt",
+  "display_name": "Poison Bolt",
+  "targeting_mode": "single_enemy",
+  "mp_cost": 5,
+  "int_requirement": 0,
+  "fail_chance_formula": "0.0",
+  "aoe_radius": 0,
+  "backfire_effects": [],
+  "effects": [
+    {"type": "apply_status", "effect_id": "poisoned", "duration": 3}
+  ]
+}

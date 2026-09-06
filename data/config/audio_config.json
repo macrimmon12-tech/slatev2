@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "event_sounds": {
+    "damage_dealt": {
+      "default": "sfx/hit_generic.ogg",
+      "by_damage_type": {
+        "fire": "sfx/hit_fire.ogg",
+        "physical": "sfx/hit_physical.ogg"
+      }
+    },
+    "miss": { "default": "sfx/whiff.ogg" },
+    "status_applied": {
+      "default": "sfx/status_generic.ogg",
+      "by_effect_id": { "poisoned": "sfx/status_poison.ogg" }
+    },
+    "status_expired": { "default": "sfx/status_end.ogg" },
+    "entity_died": { "default": "sfx/death_generic.ogg" }
+  },
+  "music": {
+    "main_menu": "music/menu_theme.ogg",
+    "default_floor": "music/dungeon_loop.ogg"
+  }
+}

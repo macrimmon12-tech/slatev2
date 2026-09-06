@@ -1,0 +1,7 @@
+{
+  "id": "bad_spell",
+  "display_name": "Bad Spell",
+  "targeting_mode": "not_a_real_mode",
+  "mp_cost": 1,
+  "effects": []
+}

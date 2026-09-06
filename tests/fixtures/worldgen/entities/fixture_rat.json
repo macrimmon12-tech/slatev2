@@ -1,0 +1,9 @@
+{
+  "id": "fixture_rat",
+  "display_name": "Fixture Rat (test-only)",
+  "stats": {"hp": 6, "max_hp": 6, "strength": 2, "dexterity": 3, "vision_range": 4},
+  "combat": {"damage_min": 1, "damage_max": 2, "damage_type": "physical"},
+  "ai": {"behavior": "chaser", "state": "asleep"},
+  "xp_value": 3,
+  "loot_table": {"entries": []}
+}

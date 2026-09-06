@@ -1,0 +1,5 @@
+{
+  "id": "lightning_bolt",
+  "display_name": "Lightning Bolt (fixture)",
+  "effects": [{"type": "damage", "amount": "2d8", "damage_type": "lightning"}]
+}

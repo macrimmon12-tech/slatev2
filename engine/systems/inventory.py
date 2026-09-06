@@ -141,6 +141,55 @@ def reset_identified_base_ids() -> None:
     _identified_base_ids.clear()
 
 
+# ---------------------------------------------------------------------------
+# Module-level call boundary for 01-stats-combat.md's EffectResolver
+# ---------------------------------------------------------------------------
+#
+# engine/systems/effects.py's "identify_item"/"remove_curse" handlers were
+# written and merged before this component existed, against a documented
+# call contract (see each handler's own docstring there):
+#   engine.systems.inventory.identify_instance(item_instance_id, world, event_bus) -> None
+#   engine.systems.inventory.remove_curse(item_instance_id, world, event_bus) -> None
+# Both are bare module-level functions operating directly on `world`
+# (querying ItemInstanceComponent), not routed through an InventorySystem
+# instance — revealing/clearing one item's curse state needs neither
+# `registry` nor the optional stats/effect-resolver collaborators an
+# InventorySystem carries. `InventorySystem.identify_instance` (below)
+# delegates to this same function so there's one implementation, not two.
+
+
+def identify_instance(item_instance_id: str | None, world: World, event_bus: EventBus) -> None:
+    """Reveals one item instance's curse status (``curse_identified``)
+    without affecting any other instance of the same base id — distinct
+    from :func:`mark_base_id_identified`'s global "identify one potion,
+    know them all" effect. A falsy/unknown ``item_instance_id`` is a
+    no-op; per ``effects.py``'s own documented note, resolving "a sensible
+    target" when one isn't given is this module's call, not the caller's,
+    and "do nothing" is that sensible default."""
+    if not item_instance_id:
+        return
+    for _entity_id, item in world.query(ItemInstanceComponent):
+        if item.instance_id == item_instance_id:
+            item.curse_identified = True
+            return
+
+
+def remove_curse(item_instance_id: str | None, world: World, event_bus: EventBus) -> None:
+    """Lifts a curse entirely: clears ``cursed`` (it no longer auto-locks
+    or auto-reveals on future equips), reveals it (``curse_identified``,
+    same as :func:`identify_instance` — nothing left to hide), and
+    releases any equip-lock ``cursed`` previously imposed. A falsy/unknown
+    ``item_instance_id`` is a no-op."""
+    if not item_instance_id:
+        return
+    for _entity_id, item in world.query(ItemInstanceComponent):
+        if item.instance_id == item_instance_id:
+            item.cursed = False
+            item.curse_identified = True
+            item.locked = False
+            return
+
+
 class InventorySystem:
     def __init__(
         self,
@@ -339,10 +388,10 @@ class InventorySystem:
                 item.identified_type = True
 
     def identify_instance(self, item_instance_id: str) -> None:
-        _entity_id, item = self._find_item(item_instance_id)
-        if item is None:
-            return
-        item.curse_identified = True
+        identify_instance(item_instance_id, self.world, self.event_bus)
+
+    def remove_curse(self, item_instance_id: str) -> None:
+        remove_curse(item_instance_id, self.world, self.event_bus)
 
     def is_type_identified(self, item_base_id: str) -> bool:
         return is_base_id_identified(item_base_id)

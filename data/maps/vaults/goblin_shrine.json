@@ -1,0 +1,23 @@
+{
+  "id": "goblin_shrine",
+  "display_name": "Goblin Shrine",
+  "min_depth": 1,
+  "max_depth": 6,
+  "width": 9,
+  "height": 7,
+  "tiles": [
+    "#########",
+    "#.......#",
+    "#..###..#",
+    "#..#.#..#",
+    "#..###..#",
+    "#.......#",
+    "#########"
+  ],
+  "entity_spawns": [
+    {"entity_id": "goblin_shaman", "x": 4, "y": 3}
+  ],
+  "loot_spawns": [
+    {"item_id": "health_potion", "x": 2, "y": 1}
+  ]
+}

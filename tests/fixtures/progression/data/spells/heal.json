@@ -1,0 +1,5 @@
+{
+  "id": "heal",
+  "display_name": "Heal (fixture)",
+  "effects": [{"type": "restore_hp", "amount": "2d8"}]
+}
