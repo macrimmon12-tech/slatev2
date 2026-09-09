@@ -15,7 +15,9 @@
       "use_item_1": ["q"],
       "inventory": ["i"], "spellbook": ["p"],
       "journal": ["j"], "minimap": ["m"],
-      "menu": ["Escape"]
+      "menu": ["Escape"],
+      "pan_camera_north": ["PageUp"], "pan_camera_south": ["PageDown"],
+      "pan_camera_west": ["Home"], "pan_camera_east": ["End"]
     },
     "targeting": {
       "move_cursor_north": ["Up", "w"], "move_cursor_south": ["Down", "s"],

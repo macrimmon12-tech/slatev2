@@ -17,7 +17,7 @@ import pytest
 from engine.core.ecs import World
 from engine.core.events import EventBus
 from engine.core.spatial_hash import SpatialHash
-from engine.input.input_handler import DEFAULT_CONTROLS, InputHandler
+from engine.input.input_handler import DEFAULT_CONTROLS, InputHandler, _resolve_pygame_key
 from engine.systems.ai import PlayerTagComponent, PositionComponent
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
@@ -50,6 +50,25 @@ def collect(bus: EventBus, event_type: str) -> list:
     received = []
     bus.subscribe(event_type, lambda payload: received.append(payload))
     return received
+
+
+class _FakePressedKeys:
+    """Stand-in for ``pygame.key.get_pressed()``'s ``ScancodeWrapper`` --
+    that reads real OS keyboard state, which the ``SDL_VIDEODRIVER=dummy``
+    driver this suite runs under never populates, so
+    ``is_action_pressed`` tests monkeypatch ``pygame.key.get_pressed``
+    with one of these instead of trying to synthesize a real held key."""
+
+    def __init__(self, held_key_codes: set[int]):
+        self._held = held_key_codes
+
+    def __getitem__(self, key_code: int) -> bool:
+        return key_code in self._held
+
+
+def hold_keys(monkeypatch: pytest.MonkeyPatch, *key_names: str) -> None:
+    codes = {_resolve_pygame_key(name) for name in key_names}
+    monkeypatch.setattr(pygame.key, "get_pressed", lambda: _FakePressedKeys(codes))
 
 
 # -- config loading -----------------------------------------------------------
@@ -377,3 +396,91 @@ def test_inventory_key_emits_show_panel():
     handler.handle_pygame_event(key_event(pygame.key.key_code("i")))
 
     assert shown == [{"panel_id": "inventory", "data": None}]
+
+
+# -- is_action_pressed (continuous camera-pan polling) -------------------------------
+
+
+def test_is_action_pressed_true_while_a_bound_key_is_held(monkeypatch):
+    world = World()
+    bus = EventBus()
+    make_player(world)
+    handler = InputHandler(bus, DEFAULT_CONTROLS, world=world)
+
+    hold_keys(monkeypatch, "PageUp")
+
+    assert handler.is_action_pressed("pan_camera_north") is True
+
+
+def test_is_action_pressed_false_when_nothing_is_held(monkeypatch):
+    world = World()
+    bus = EventBus()
+    make_player(world)
+    handler = InputHandler(bus, DEFAULT_CONTROLS, world=world)
+
+    hold_keys(monkeypatch)  # nothing held
+
+    assert handler.is_action_pressed("pan_camera_north") is False
+
+
+def test_is_action_pressed_false_for_a_different_bound_key(monkeypatch):
+    world = World()
+    bus = EventBus()
+    make_player(world)
+    handler = InputHandler(bus, DEFAULT_CONTROLS, world=world)
+
+    hold_keys(monkeypatch, "PageDown")  # south, not north
+
+    assert handler.is_action_pressed("pan_camera_north") is False
+    assert handler.is_action_pressed("pan_camera_south") is True
+
+
+def test_is_action_pressed_false_for_an_action_unbound_in_the_active_context(monkeypatch):
+    world = World()
+    bus = EventBus()
+    make_player(world)
+    handler = InputHandler(bus, DEFAULT_CONTROLS, world=world)
+    handler.set_context("ui")  # camera panning is only bound in "game"
+
+    hold_keys(monkeypatch, "PageUp")
+
+    assert handler.is_action_pressed("pan_camera_north") is False
+
+
+def test_is_action_pressed_respects_rebinding(monkeypatch):
+    world = World()
+    bus = EventBus()
+    make_player(world)
+    handler = InputHandler(bus, DEFAULT_CONTROLS, world=world)
+    handler.rebind("pan_camera_north", "game", "u")
+
+    hold_keys(monkeypatch, "PageUp")  # the old, now-replaced binding
+    assert handler.is_action_pressed("pan_camera_north") is False
+
+    hold_keys(monkeypatch, "u")  # the new binding
+    assert handler.is_action_pressed("pan_camera_north") is True
+
+
+def test_is_action_pressed_unknown_action_is_false_not_a_crash(monkeypatch):
+    world = World()
+    bus = EventBus()
+    make_player(world)
+    handler = InputHandler(bus, DEFAULT_CONTROLS, world=world)
+
+    hold_keys(monkeypatch, "PageUp")
+
+    assert handler.is_action_pressed("not_a_real_action") is False
+
+
+def test_camera_pan_actions_do_not_dispatch_an_event_on_keydown():
+    world = World()
+    bus = EventBus()
+    make_player(world)
+    handler = InputHandler(bus, DEFAULT_CONTROLS, world=world)
+    received = []
+    bus.subscribe("show_panel", lambda payload: received.append(payload))
+
+    for key_name in ("PageUp", "PageDown", "Home", "End"):
+        handler.handle_pygame_event(key_event(pygame.key.key_code(key_name)))
+
+    assert received == []

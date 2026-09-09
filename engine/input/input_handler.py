@@ -167,6 +167,10 @@ DEFAULT_CONTROLS: dict[str, dict[str, list[str]]] = {
         "journal": ["j"],
         "minimap": ["m"],
         "menu": ["Escape"],
+        "pan_camera_north": ["PageUp"],
+        "pan_camera_south": ["PageDown"],
+        "pan_camera_west": ["Home"],
+        "pan_camera_east": ["End"],
     },
     "targeting": {
         "move_cursor_north": ["Up", "w"],
@@ -203,6 +207,18 @@ _MOVE_DELTAS: dict[str, Position] = {
 # but deliberately do nothing here.
 _CURSOR_ACTIONS = frozenset(
     {"move_cursor_north", "move_cursor_south", "move_cursor_east", "move_cursor_west"}
+)
+
+# Same shape, live-play addition (no component doc covers manual camera
+# panning at all): purely a Renderer-local view concern, not a game rule,
+# so this module recognizes the action (keeps it out of controls.json's
+# fully-rebindable/no-hardcoded-keys convention) but does not dispatch an
+# event for it -- the live game loop polls pygame.key.get_pressed() for
+# these each frame and calls Renderer.pan_camera directly, the same
+# "renderer decides how to draw a view concern, this module just declines
+# to treat it as an unknown action" split as _CURSOR_ACTIONS above.
+_CAMERA_PAN_ACTIONS = frozenset(
+    {"pan_camera_north", "pan_camera_south", "pan_camera_east", "pan_camera_west"}
 )
 
 _PANEL_ACTIONS: dict[str, str] = {
@@ -368,6 +384,28 @@ class InputHandler:
         bindings[action] = [new_key]
         self._key_maps[context] = _build_key_map(bindings)
 
+    def is_action_pressed(self, action: str) -> bool:
+        """True if any physical key currently bound to ``action`` in the
+        *active* context is held down right now (per
+        ``pygame.key.get_pressed()``). For live, continuous per-frame
+        polling of view-only actions (see ``_CAMERA_PAN_ACTIONS``) that
+        deliberately don't go through the discrete KEYDOWN-dispatch path
+        ``handle_pygame_event``/``resolve_action`` use — respects
+        whatever rebinding is in effect via :meth:`rebind`, unlike a
+        caller hardcoding a raw pygame key constant would (this module's
+        own "fully rebindable, never hardcoded" rule, module docstring
+        note 2 / component doc §2.1)."""
+        bindings = self._contexts.get(self._context, {})
+        key_names = bindings.get(action, [])
+        if not key_names:
+            return False
+        pressed = pygame.key.get_pressed()
+        for key_name in key_names:
+            key_code = _resolve_pygame_key(key_name)
+            if key_code is not None and pressed[key_code]:
+                return True
+        return False
+
     def resolve_action(self, pygame_event: Any) -> str | None:
         """Read-only counterpart to :meth:`handle_pygame_event`: returns
         the action name a key-down would resolve to in the current
@@ -435,6 +473,8 @@ class InputHandler:
             self._handle_cancel_targeting()
         elif action in _CURSOR_ACTIONS:
             pass  # renderer-local cursor state; no event (§2.1)
+        elif action in _CAMERA_PAN_ACTIONS:
+            pass  # renderer-local camera state; no event (see this module's definition of _CAMERA_PAN_ACTIONS)
         elif action in _PANEL_ACTIONS:
             self._handle_show_panel(_PANEL_ACTIONS[action])
         elif action == "quit_to_menu":
