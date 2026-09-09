@@ -650,6 +650,7 @@ class GameSession:
         frames = 0
         while self._running:
             self._pump_events()
+            self._poll_camera_pan_keys()
             if self._turn_pending:
                 combat_module.process_monster_turns(self.world, self.event_bus)
                 self._turn_pending = False
@@ -670,6 +671,31 @@ class GameSession:
             frames += 1
             if max_frames is not None and frames >= max_frames:
                 self._running = False
+
+    def _poll_camera_pan_keys(self) -> None:
+        """Continuous keyboard camera panning (module docstring, point 6)
+        — a per-frame ``pygame.key.get_pressed()`` poll, deliberately not
+        routed through the discrete KEYDOWN dispatch path (see
+        ``InputHandler._CAMERA_PAN_ACTIONS``) so holding a key pans
+        smoothly frame-by-frame instead of only nudging once per
+        keypress. Same gating as the mouse-wheel pan path in
+        :meth:`_pump_events` (``state == "playing"`` only) for
+        consistency between the two input methods, rather than inventing
+        a stricter rule for one and not the other."""
+        if self.state != "playing":
+            return
+        dx = 0
+        dy = 0
+        if self.input_handler.is_action_pressed("pan_camera_west"):
+            dx -= 1
+        if self.input_handler.is_action_pressed("pan_camera_east"):
+            dx += 1
+        if self.input_handler.is_action_pressed("pan_camera_north"):
+            dy -= 1
+        if self.input_handler.is_action_pressed("pan_camera_south"):
+            dy += 1
+        if dx or dy:
+            self.renderer.pan_camera(dx, dy)
 
     def _pump_events(self) -> None:
         for event in pygame.event.get():

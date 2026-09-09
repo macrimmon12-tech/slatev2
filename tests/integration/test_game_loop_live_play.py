@@ -173,6 +173,25 @@ def _new_game(session):
     session.event_bus.emit("new_game_selected", {"campaign_id": None})
 
 
+class _FakePressedKeys:
+    """Stand-in for ``pygame.key.get_pressed()``'s ``ScancodeWrapper`` --
+    this suite runs headless (``SDL_VIDEODRIVER=dummy``), which never
+    populates real OS keyboard state, so tests that need a key "held"
+    for ``GameSession._poll_camera_pan_keys`` monkeypatch
+    ``pygame.key.get_pressed`` with one of these instead."""
+
+    def __init__(self, held_key_codes: set[int]):
+        self._held = held_key_codes
+
+    def __getitem__(self, key_code: int) -> bool:
+        return key_code in self._held
+
+
+def _hold_keys(monkeypatch, *key_names: str) -> None:
+    codes = {pygame.key.key_code(name) for name in key_names}
+    monkeypatch.setattr(pygame.key, "get_pressed", lambda: _FakePressedKeys(codes))
+
+
 class TestInventoryAndSpellbook:
     def test_starter_kit_is_granted_and_listed(self, session):
         _new_game(session)
@@ -399,6 +418,70 @@ class TestScrollingAndCamera:
             "player_moved", {"entity_id": session.player_id, "from": (position.x, position.y), "to": (position.x, position.y)}
         )
         assert session.renderer._camera_origin != panned_origin
+
+    def test_holding_a_pan_key_pans_the_camera_every_poll(self, session, monkeypatch):
+        _new_game(session)
+        origin_before = session.renderer._camera_origin
+        _hold_keys(monkeypatch, "PageUp")  # pan_camera_north
+
+        session._poll_camera_pan_keys()
+        assert session.renderer._camera_origin == (origin_before[0], origin_before[1] - 1)
+
+        session._poll_camera_pan_keys()  # still held next frame -> keeps panning
+        assert session.renderer._camera_origin == (origin_before[0], origin_before[1] - 2)
+
+    def test_all_four_pan_keys_move_the_expected_directions(self, session, monkeypatch):
+        _new_game(session)
+        origin = session.renderer._camera_origin
+
+        _hold_keys(monkeypatch, "End")  # pan_camera_east
+        session._poll_camera_pan_keys()
+        assert session.renderer._camera_origin == (origin[0] + 1, origin[1])
+
+        _hold_keys(monkeypatch, "Home")  # pan_camera_west
+        session._poll_camera_pan_keys()
+        assert session.renderer._camera_origin == (origin[0], origin[1])
+
+        _hold_keys(monkeypatch, "PageDown")  # pan_camera_south
+        session._poll_camera_pan_keys()
+        assert session.renderer._camera_origin == (origin[0], origin[1] + 1)
+
+    def test_opposite_pan_keys_held_together_cancel_out(self, session, monkeypatch):
+        _new_game(session)
+        origin_before = session.renderer._camera_origin
+        _hold_keys(monkeypatch, "Home", "End")  # west + east simultaneously
+
+        session._poll_camera_pan_keys()
+
+        assert session.renderer._camera_origin == origin_before
+
+    def test_diagonal_pan_keys_held_together_combine(self, session, monkeypatch):
+        _new_game(session)
+        origin_before = session.renderer._camera_origin
+        _hold_keys(monkeypatch, "PageUp", "Home")  # north + west
+
+        session._poll_camera_pan_keys()
+
+        assert session.renderer._camera_origin == (origin_before[0] - 1, origin_before[1] - 1)
+
+    def test_pan_keys_do_nothing_outside_the_playing_state(self, session, monkeypatch):
+        assert session.state == "menu"  # no _new_game() call
+        origin_before = session.renderer._camera_origin
+        _hold_keys(monkeypatch, "PageUp")
+
+        session._poll_camera_pan_keys()
+
+        assert session.renderer._camera_origin == origin_before
+
+    def test_keyboard_pan_does_not_touch_player_position(self, session, monkeypatch):
+        _new_game(session)
+        position = session.world.get_component(session.player_id, PositionComponent)
+        before_pos = (position.x, position.y)
+        _hold_keys(monkeypatch, "PageUp", "End")
+
+        session._poll_camera_pan_keys()
+
+        assert (position.x, position.y) == before_pos
 
 
 def _find_widget(spec: dict, widget_id: str) -> dict | None:
