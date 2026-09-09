@@ -1,9 +1,23 @@
 {
   "schema_version": 1,
   "colors": {
-    "panel_bg": [30, 30, 40],
-    "title": [230, 230, 230],
-    "hp_red": [200, 40, 40],
-    "text_default": [230, 230, 230]
+    "panel_bg": [24, 22, 28],
+    "panel_bg_alt": [32, 29, 37],
+    "hud_bg": [18, 17, 22],
+    "border": [96, 82, 66],
+    "accent": [212, 160, 68],
+    "title": [216, 172, 96],
+    "subtitle": [140, 148, 158],
+    "text_default": [214, 208, 196],
+    "text_dim": [122, 116, 110],
+    "disabled": [68, 64, 60],
+    "hp_red": [178, 48, 44],
+    "mp_blue": [72, 122, 196],
+    "bar_track": [38, 35, 40],
+    "button_bg": [44, 40, 50],
+    "button_hover": [64, 56, 68],
+    "button_primary_bg": [96, 70, 40],
+    "button_primary_hover": [130, 98, 54],
+    "button_text": [224, 214, 194]
   }
 }

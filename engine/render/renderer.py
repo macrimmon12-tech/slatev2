@@ -293,7 +293,24 @@ class Renderer:
     def _draw_hud(self) -> None:
         pygame.draw.rect(self._window, self._resolve_color("hud_background"), self._hud_rect)
         if self._ui_runtime is not None:
-            self._ui_runtime.draw(self._window, self._hud_rect)
+            # Live-play wiring fix: this used to pass `self._hud_rect` as
+            # a second positional argument to `ui_runtime.draw`, but
+            # `UIRuntime.draw`'s real (08-ui-runtime.md-documented)
+            # signature is `draw(surface, mouse_pos=None)` -- there never
+            # was a `rect` parameter to receive it. UIRuntime is instead
+            # told which rect is "the HUD" vs. "full screen" once, at
+            # construction, via its own `screen_rect_provider` callable
+            # (its module docstring note 2) -- this call site and that
+            # constructor argument were simply never exercised together
+            # before (07's own integration test stubs `ui_runtime`; 08's
+            # tests never construct a real `Renderer`). Fixed here rather
+            # than patching around it, since the real fix is one line and
+            # `screen_rect_provider` is exactly the mechanism 08 already
+            # built for this. `pygame.mouse.get_pos()` is passed through
+            # so Button hover highlighting (also added for live play)
+            # works without this module needing to know anything about
+            # widget internals.
+            self._ui_runtime.draw(self._window, pygame.mouse.get_pos())
 
     # -- palette --------------------------------------------------------------
 

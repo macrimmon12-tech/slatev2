@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "colors": {
-    "wall": [90, 90, 100],
-    "floor": [40, 40, 46],
-    "entity_default": [200, 60, 60],
-    "player": [60, 160, 220],
-    "hud_background": [24, 24, 28],
+    "wall": [74, 82, 94],
+    "floor": [23, 26, 24],
+    "entity_default": [178, 54, 48],
+    "player": [96, 190, 224],
+    "hud_background": [18, 17, 22],
     "missing": [255, 0, 255]
   }
 }

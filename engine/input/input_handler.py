@@ -124,6 +124,18 @@ from engine.systems.ai import PlayerTagComponent, PositionComponent
 # interact key, not the movement-collision ("bump") case §1.1 documents.
 from engine.systems.interaction import InteractableComponent
 
+# Live-play wiring addition (no component doc covers "bump into a
+# monster" at all -- §2.1's action table only ever produced
+# entity_moved/player_moved or the interactable-bump case above; a real
+# playable build needs *something* to turn "walked into a hostile" into
+# combat). StatsComponent is used purely as an existence check ("this
+# entity has combat stats, so it's attackable"), never read from -- this
+# module still never decides hit chance or damage (module docstring, top
+# paragraph): it only recognizes the bump and emits a request-level event
+# for whoever resolves combat (the live game loop) to act on, exactly the
+# same shape as the interactable-bump case just above.
+from engine.systems.stats import StatsComponent
+
 logger = logging.getLogger(__name__)
 
 Position = tuple[int, int]
@@ -330,6 +342,17 @@ class InputHandler:
 
     # -- public API (component doc §2.1) -----------------------------------
 
+    def set_spatial_hash(self, spatial_hash: SpatialHash | None) -> None:
+        """Swap in a new ``SpatialHash`` — needed because
+        ``engine.systems.worldgen`` builds a fresh, floor-scoped
+        ``SpatialHash`` per floor (``register_spatial_hash``/
+        ``get_spatial_hash``) rather than reusing one fixed instance for
+        the whole run; whoever drives floor transitions (the live game
+        loop) calls this on every ``floor_changed`` so adjacency/bump
+        lookups here keep querying the *current* floor's entities instead
+        of a stale or permanently-empty one."""
+        self._spatial_hash = spatial_hash
+
     def set_context(self, context: str) -> None:
         """Swap the single active context. Exactly one context is active at
         a time (§2.1); an unrecognized context is accepted (so a later
@@ -344,6 +367,26 @@ class InputHandler:
         bindings = self._contexts.setdefault(context, {})
         bindings[action] = [new_key]
         self._key_maps[context] = _build_key_map(bindings)
+
+    def resolve_action(self, pygame_event: Any) -> str | None:
+        """Read-only counterpart to :meth:`handle_pygame_event`: returns
+        the action name a key-down would resolve to in the current
+        context, without dispatching it. Exists because the ``ui``
+        context's ``confirm``/``cancel``/``nav_up``/``nav_down`` actions
+        are, by this module's own design (module docstring note 3;
+        ``_dispatch_action``'s closing branch), UI runtime's to route, not
+        this module's to act on — a caller wiring a real frame loop needs
+        the action name itself to hand to ``UIRuntime.handle_ui_input``."""
+        if pygame_event.type != pygame.KEYDOWN:
+            return None
+        key_map = self._key_maps.get(self._context)
+        if not key_map:
+            return None
+        match = key_map.get(pygame_event.key)
+        if match is None:
+            return None
+        action, _key_name = match
+        return action
 
     def handle_pygame_event(self, pygame_event: Any) -> None:
         """Translate one raw pygame event, if it's a recognized key-down in
@@ -436,6 +479,21 @@ class InputHandler:
                 return candidate_id
         return None
 
+    def _find_attackable_at(self, position: Position, exclude: int) -> int | None:
+        """Entity id at ``position`` carrying ``StatsComponent`` (used
+        purely as an existence check — "this has combat stats, so it's
+        attackable"), other than ``exclude``. ``None`` if no
+        ``spatial_hash`` was injected — mirrors
+        :meth:`_find_interactable_at`'s absence-= zero-cost gating."""
+        if self._spatial_hash is None:
+            return None
+        for candidate_id in sorted(self._spatial_hash.query_radius(position, 0)):
+            if candidate_id == exclude:
+                continue
+            if self._world.get_component(candidate_id, StatsComponent) is not None:
+                return candidate_id
+        return None
+
     def _handle_move(self, action: str) -> None:
         resolved = self._resolve_player()
         if resolved is None:
@@ -452,6 +510,15 @@ class InputHandler:
         if interactable_target is not None:
             self._event_bus.emit(
                 "entity_interacted", {"actor_id": entity_id, "target_id": interactable_target}
+            )
+            return
+
+        attack_target = self._find_attackable_at(to_pos, exclude=entity_id)
+        if attack_target is not None:
+            # Request-level only -- combat.resolve_hit (hit chance, damage
+            # roll) is not this module's call (module docstring, top).
+            self._event_bus.emit(
+                "melee_attack_attempt", {"attacker_id": entity_id, "target_id": attack_target}
             )
             return
 

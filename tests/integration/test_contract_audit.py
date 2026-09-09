@@ -71,18 +71,13 @@ _LUA_NOTIFICATION_ONLY = (
 )
 NO_SUBSCRIBER_EXCEPTIONS = {
     "game_complete": "terminal by design -- no credits/game-over screen exists yet",
-    "player_died": "terminal by design -- no game-over flow exists yet",
-    "message": _NO_UI_SCREEN_BUILT_YET,
     "level_up_pending": _NO_UI_SCREEN_BUILT_YET,
     "spell_choice_pending": _NO_UI_SCREEN_BUILT_YET,
     "bonus_points_remaining": _NO_UI_SCREEN_BUILT_YET,
     "campaign_selected": _NO_UI_SCREEN_BUILT_YET,
-    "new_game_selected": _NO_UI_SCREEN_BUILT_YET,
     "load_game_selected": _NO_UI_SCREEN_BUILT_YET,
     "save_slot_selected": _NO_UI_SCREEN_BUILT_YET,
-    "quit_selected": _NO_UI_SCREEN_BUILT_YET,
     "entity_spawned": "real emitter (worldgen); AI/renderer both work by polling world.query(...) every turn/frame rather than caching from a spawn event, so no subscriber is actually needed today -- an architectural choice, not a gap",
-    "entity_died": "real emitter (combat, on entity_destroy); AI needs no cleanup subscription since world.query(...) simply stops returning a destroyed entity -- no quest/Lua listener content has been authored yet either",
     "item_pickup": "real emitter (inventory); no journal/UI has been authored yet to react to it",
     "item_dropped": "real emitter (inventory); no worldgen/loot re-pickup listener has been authored yet",
     "item_used": "real emitter (inventory); no UI/journal listener has been authored yet",
