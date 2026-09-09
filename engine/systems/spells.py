@@ -340,21 +340,39 @@ class SpellSystem:
                 self._apply_effect_list(
                     effects, entity_id, aoe_target_id, world, event_bus, position=position
                 )
-        else:
+        elif direct_target_id is not None:
             self._apply_effect_list(
                 effects, entity_id, direct_target_id, world, event_bus, position=position
             )
+        # else: single_enemy resolved no real target (see _resolve_target's
+        # live-play fix below) -- MP is already spent (step 1, same as a
+        # fizzle), but there is no one to apply an enemy-targeted effect
+        # list to. Silently skipping is the correct "miss," not falling
+        # back to hitting the caster with what was meant for an enemy.
 
     def _resolve_target(
         self, entity_id: int, targeting_mode: str, target: dict | None
-    ) -> tuple[tuple[int, int] | None, int]:
+    ) -> tuple[tuple[int, int] | None, int | None]:
         if targeting_mode in _SELF_TARGETING_MODES:
             return self._spatial_hash.position_of(entity_id), entity_id
         if targeting_mode == "single_enemy":
-            target_entity_id = target["entity_id"]
+            # Live-play fix: this used to be a bare `target["entity_id"]`,
+            # which raised a raw KeyError the instant a real player
+            # clicked an empty tile with a single_enemy spell selected —
+            # exactly the kind of caller-supplied-but-incomplete input
+            # CONTRACTS.md §2 rule 7 says must degrade silently, not
+            # crash the process. No entity under the cursor is a normal,
+            # expected outcome of mouse-driven targeting, not a caller
+            # bug to raise over -- and it must not fall back to treating
+            # the caster as the target (that would turn "I whiffed my
+            # target" into "I hit myself with my own attack spell").
+            target_entity_id = (target or {}).get("entity_id")
+            if target_entity_id is None:
+                return None, None
             return self._spatial_hash.position_of(target_entity_id), target_entity_id
         if targeting_mode in ("targeted_tile", "aoe_targeted"):
-            position = tuple(target["position"])
+            raw_position = (target or {}).get("position")
+            position = tuple(raw_position) if raw_position is not None else None
             # No single target entity for a tile-targeted mode — effects
             # here act on position (noise, vfx, teleport_self, ...); the
             # caster itself is the closest thing to a "target_id" 01's

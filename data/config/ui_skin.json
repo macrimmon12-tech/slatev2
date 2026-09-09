@@ -291,13 +291,288 @@
           "type": "List",
           "id": "hud_message_log",
           "items_key": "messages",
-          "rect": { "x": 12, "y": 128, "w": 216, "h": 660 },
+          "rect": { "x": 12, "y": 128, "w": 216, "h": 460 },
           "item_template": {
             "type": "Label",
             "text": "{{item.text}}",
             "rect": { "x": 0, "y": 0, "w": 216, "h": 18 },
             "style": "text_dim"
           }
+        },
+        {
+          "type": "Panel",
+          "rect": { "x": 12, "y": 596, "w": 216, "h": 1 },
+          "background": "border"
+        },
+        {
+          "type": "Button",
+          "id": "btn_hud_inventory",
+          "text": "Inventory",
+          "rect": { "x": 12, "y": 608, "w": 216, "h": 36 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "button_text",
+          "on_click": { "event": "show_panel", "payload": { "panel_id": "inventory" } }
+        },
+        {
+          "type": "Button",
+          "id": "btn_hud_spells",
+          "text": "Spells",
+          "rect": { "x": 12, "y": 652, "w": 216, "h": 36 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "button_text",
+          "on_click": { "event": "show_panel", "payload": { "panel_id": "spellbook" } }
+        }
+      ]
+    },
+    "inventory": {
+      "type": "Panel",
+      "id": "inventory",
+      "rect": { "x": "center", "y": "center", "w": 500, "h": 500 },
+      "background": "panel_bg",
+      "border": "border",
+      "children": [
+        {
+          "type": "Label",
+          "text": "Inventory",
+          "rect": { "x": "center", "y": 20, "w": 500, "h": 26 },
+          "style": "title"
+        },
+        {
+          "type": "Panel",
+          "rect": { "x": 30, "y": 56, "w": 440, "h": 360 },
+          "background": "panel_bg_alt",
+          "border": "border",
+          "children": [
+            {
+              "type": "List",
+              "id": "inventory_list",
+              "items_key": "items",
+              "rect": { "x": 6, "y": 6, "w": 428, "h": 348 },
+              "item_template": {
+                "type": "Button",
+                "text": "{{item.name}} — {{item.subtitle}}",
+                "rect": { "x": 0, "y": 0, "w": 428, "h": 40 },
+                "color": "button_bg",
+                "hover_color": "button_hover",
+                "text_style": "button_text",
+                "on_click": {
+                  "event": "inventory_item_clicked",
+                  "payload": {
+                    "entity_id": "{{entity_id}}",
+                    "item_instance_id": "{{item.instance_id}}"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "Button",
+          "id": "btn_inventory_close",
+          "text": "Close",
+          "rect": { "x": "center", "y": 444, "w": 180, "h": 40 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "text_dim",
+          "on_click": { "event": "panel_closed", "payload": { "panel_id": "inventory" } }
+        }
+      ]
+    },
+    "spellbook": {
+      "type": "Panel",
+      "id": "spellbook",
+      "rect": { "x": "center", "y": "center", "w": 500, "h": 500 },
+      "background": "panel_bg",
+      "border": "border",
+      "children": [
+        {
+          "type": "Label",
+          "text": "Spells",
+          "rect": { "x": "center", "y": 20, "w": 500, "h": 26 },
+          "style": "title"
+        },
+        {
+          "type": "Panel",
+          "rect": { "x": 30, "y": 56, "w": 440, "h": 360 },
+          "background": "panel_bg_alt",
+          "border": "border",
+          "children": [
+            {
+              "type": "List",
+              "id": "spellbook_list",
+              "items_key": "spells",
+              "rect": { "x": 6, "y": 6, "w": 428, "h": 348 },
+              "item_template": {
+                "type": "Button",
+                "text": "{{item.name}} ({{item.mp_cost}} MP)",
+                "rect": { "x": 0, "y": 0, "w": 428, "h": 40 },
+                "color": "button_bg",
+                "hover_color": "button_hover",
+                "text_style": "button_text",
+                "on_click": {
+                  "event": "spell_clicked",
+                  "payload": {
+                    "entity_id": "{{entity_id}}",
+                    "spell_id": "{{item.spell_id}}"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "Button",
+          "id": "btn_spellbook_close",
+          "text": "Close",
+          "rect": { "x": "center", "y": 444, "w": 180, "h": 40 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "text_dim",
+          "on_click": { "event": "panel_closed", "payload": { "panel_id": "spellbook" } }
+        }
+      ]
+    },
+    "menu": {
+      "type": "Panel",
+      "id": "menu",
+      "rect": { "x": "center", "y": "center", "w": 480, "h": 520 },
+      "background": "panel_bg",
+      "border": "border",
+      "children": [
+        {
+          "type": "Label",
+          "text": "Paused",
+          "rect": { "x": "center", "y": 34, "w": 480, "h": 30 },
+          "style": "title"
+        },
+        {
+          "type": "Label",
+          "text": "The Keep waits in silence",
+          "rect": { "x": "center", "y": 68, "w": 480, "h": 20 },
+          "style": "subtitle"
+        },
+        {
+          "type": "Panel",
+          "rect": { "x": "center", "y": 100, "w": 360, "h": 2 },
+          "background": "accent"
+        },
+        {
+          "type": "Panel",
+          "id": "menu_buttons",
+          "rect": { "x": "center", "y": 130, "w": 340, "h": 352 },
+          "background": "panel_bg_alt",
+          "border": "border",
+          "children": [
+            {
+              "type": "Button",
+              "id": "btn_menu_resume",
+              "text": "Resume",
+              "rect": { "x": "center", "y": 26, "w": 270, "h": 44 },
+              "color": "button_primary_bg",
+              "hover_color": "button_primary_hover",
+              "text_style": "button_text",
+              "on_click": { "event": "panel_closed", "payload": { "panel_id": "menu" } }
+            },
+            {
+              "type": "Button",
+              "id": "btn_menu_save",
+              "text": "Save Game",
+              "rect": { "x": "center", "y": 90, "w": 270, "h": 44 },
+              "color": "button_bg",
+              "hover_color": "button_hover",
+              "text_style": "button_text",
+              "on_click": { "event": "save_game_clicked", "payload": {} }
+            },
+            {
+              "type": "Button",
+              "id": "btn_menu_load",
+              "text": "Load Game",
+              "rect": { "x": "center", "y": 154, "w": 270, "h": 44 },
+              "color": "button_bg",
+              "hover_color": "button_hover",
+              "text_style": "button_text",
+              "on_click": { "event": "show_panel", "payload": { "panel_id": "save_select" } }
+            },
+            {
+              "type": "Button",
+              "id": "btn_menu_settings",
+              "text": "Settings",
+              "rect": { "x": "center", "y": 218, "w": 270, "h": 44 },
+              "color": "button_bg",
+              "hover_color": "button_hover",
+              "text_style": "button_text",
+              "on_click": { "event": "show_panel", "payload": { "panel_id": "settings" } }
+            },
+            {
+              "type": "Button",
+              "id": "btn_menu_quit",
+              "text": "Quit to Main Menu",
+              "rect": { "x": "center", "y": 282, "w": 270, "h": 44 },
+              "color": "button_bg",
+              "hover_color": "button_hover",
+              "text_style": "text_dim",
+              "on_click": { "event": "quit_to_main_menu_clicked", "payload": {} }
+            }
+          ]
+        }
+      ]
+    },
+    "settings": {
+      "type": "Panel",
+      "id": "settings",
+      "rect": { "x": "center", "y": "center", "w": 400, "h": 220 },
+      "background": "panel_bg",
+      "border": "border",
+      "children": [
+        {
+          "type": "Label",
+          "text": "Settings",
+          "rect": { "x": "center", "y": 20, "w": 400, "h": 26 },
+          "style": "title"
+        },
+        {
+          "type": "Panel",
+          "rect": { "x": "center", "y": 52, "w": 320, "h": 2 },
+          "background": "accent"
+        },
+        {
+          "type": "Button",
+          "id": "btn_volume_down",
+          "text": "−",
+          "rect": { "x": 30, "y": 80, "w": 50, "h": 44 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "button_text",
+          "on_click": { "event": "volume_adjust_clicked", "payload": { "delta": -10 } }
+        },
+        {
+          "type": "Label",
+          "id": "settings_volume_label",
+          "text": "Volume: {{volume_pct}}%",
+          "rect": { "x": 90, "y": 92, "w": 220, "h": 22 },
+          "style": "text_default"
+        },
+        {
+          "type": "Button",
+          "id": "btn_volume_up",
+          "text": "+",
+          "rect": { "x": 320, "y": 80, "w": 50, "h": 44 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "button_text",
+          "on_click": { "event": "volume_adjust_clicked", "payload": { "delta": 10 } }
+        },
+        {
+          "type": "Button",
+          "id": "btn_settings_back",
+          "text": "Back",
+          "rect": { "x": "center", "y": 150, "w": 160, "h": 40 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "text_dim",
+          "on_click": { "event": "panel_closed", "payload": { "panel_id": "settings" } }
         }
       ]
     }

@@ -303,6 +303,16 @@ class UIRuntime:
         self._font: Any = None  # lazily created pygame.font.Font, or False if init failed
         self._hover_spec: Any = None  # the exact spec dict of the currently-hovered interactive widget
 
+        # Scroll state (live-play addition -- no component doc specifies
+        # this; Lists previously just overflowed past their own rect with
+        # no clipping at all once item count * row height exceeded `h`).
+        # Keyed by id(spec) -- a List/Grid node's spec dict is stable
+        # between update_panel calls (only replaced by a fresh
+        # create_panel for the same panel_id), matching the identity
+        # convention _WidgetNode/_PanelState already rely on.
+        self._scroll_offsets: dict[int, int] = {}
+        self._last_item_counts: dict[int, int] = {}
+
         self._show_panel_token = event_bus.subscribe("show_panel", self._on_show_panel)
         # 15-integration-verification.md fix: 10-lua-scripting-layer.md's
         # own module docstring (engine/lua/api/panel.py) already flagged
@@ -453,15 +463,42 @@ class UIRuntime:
         rect: tuple[int, int, int, int],
         data: dict[str, Any],
     ) -> None:
-        x, y, w, _h = rect
+        x, y, w, h = rect
         template = spec.get("item_template")
         if not template:
             return
         template_rect_spec = _rect_spec_of(template)
         row_h = template_rect_spec.get("h") or 32
-        for index, (item_widget, item_context) in enumerate(self._expand_items(spec, data)):
-            cell_rect = (x, y + index * row_h, w, row_h)
-            self._draw_widget(surface, item_widget, item_context, cell_rect)
+        expanded = self._expand_items(spec, data)
+        total = len(expanded)
+        visible_rows = max(1, h // row_h) if row_h else total
+
+        list_key = id(spec)
+        if total > self._last_item_counts.get(list_key, 0):
+            # A newly-appended item (the message log's own use case) jumps
+            # the view to the bottom -- the conventional "new chat/log
+            # line just arrived" behavior. A list whose contents were
+            # merely re-ordered/replaced without growing keeps whatever
+            # scroll position the viewer left it at.
+            self._scroll_offsets[list_key] = max(0, total - visible_rows)
+        self._last_item_counts[list_key] = total
+
+        max_offset = max(0, total - visible_rows)
+        offset = min(self._scroll_offsets.get(list_key, 0), max_offset)
+        self._scroll_offsets[list_key] = offset
+
+        pygame_module = get_pygame_module()
+        previous_clip = None
+        if pygame_module is not None:
+            previous_clip = surface.get_clip()
+            surface.set_clip(pygame_module.Rect(x, y, w, h))
+        try:
+            for row, (item_widget, item_context) in enumerate(expanded[offset : offset + visible_rows]):
+                cell_rect = (x, y + row * row_h, w, row_h)
+                self._draw_widget(surface, item_widget, item_context, cell_rect)
+        finally:
+            if pygame_module is not None:
+                surface.set_clip(previous_clip)
 
     def _expand_items(
         self, spec: dict[str, Any], data: dict[str, Any]
@@ -662,27 +699,52 @@ class UIRuntime:
             yield from self._iter_interactive_with_rect(child, data, rect)
         if node_type in ("List", "Grid"):
             x, y, w, _h = rect
-            template = spec.get("item_template")
-            if template:
-                row_h = _rect_spec_of(template).get("h") or 32
-                for index, (item_widget, item_context) in enumerate(self._expand_items(spec, data)):
-                    cell_rect = (x, y + index * row_h, w, row_h)
-                    yield from self._iter_interactive_with_rect(item_widget, item_context, cell_rect)
+            expanded, row_h, offset, visible_rows = self._visible_list_window(spec, data, rect)
+            for row, (item_widget, item_context) in enumerate(expanded[offset : offset + visible_rows]):
+                cell_rect = (x, y + row * row_h, w, row_h)
+                yield from self._iter_interactive_with_rect(item_widget, item_context, cell_rect)
+
+    def _visible_list_window(
+        self, spec: dict[str, Any], data: dict[str, Any], rect: tuple[int, int, int, int]
+    ) -> tuple[list[tuple[_WidgetNode, dict[str, Any]]], int, int, int]:
+        """Returns ``(expanded_items, row_h, offset, visible_rows)`` for a
+        List/Grid node's *currently drawn* window — reads the scroll
+        offset :meth:`_draw_list_items` already maintains rather than
+        recomputing it, so hit-testing (click/hover/scroll) always agrees
+        with whatever the last actual draw put on screen."""
+        _x, _y, w, h = rect
+        template = spec.get("item_template")
+        if not template:
+            return [], 32, 0, 0
+        row_h = _rect_spec_of(template).get("h") or 32
+        expanded = self._expand_items(spec, data)
+        visible_rows = max(1, h // row_h) if row_h else len(expanded)
+        max_offset = max(0, len(expanded) - visible_rows)
+        offset = min(self._scroll_offsets.get(id(spec), 0), max_offset)
+        return expanded, row_h, offset, visible_rows
 
     def _hit_test(
         self, pos: tuple[int, int]
     ) -> tuple[bool, tuple[_WidgetNode, dict[str, Any], tuple[int, int, int, int]] | None]:
         """Returns ``(panel_claimed, hit)``. ``panel_claimed`` is True as
-        soon as the topmost panel with any interactive widgets is found,
-        even if ``pos`` misses every widget in it — mirrors
-        ``handle_ui_input``'s "topmost interactive panel owns input,
-        whether or not it does anything with this particular press"."""
+        soon as the topmost panel *whose own rect contains ``pos``* is
+        found to have any interactive widgets, even if ``pos`` misses
+        every widget in it — mirrors ``handle_ui_input``'s "topmost
+        interactive panel owns input, whether or not it does anything
+        with this particular press". The rect-containment check matters
+        once a panel narrower than the full window (e.g. ``hud``, 240px
+        wide) has any Button in it at all — without it, that panel would
+        claim every click anywhere in the whole window, including on the
+        game viewport far outside its own strip."""
         px, py = pos
         for panel_id in reversed(self._stack):
             state = self._panels.get(panel_id)
             if state is None or not _is_visible(state.root.spec, state.data):
                 continue
             parent_rect = self._screen_rect_provider(bool(state.root.spec.get("full_screen")))
+            parent_x, parent_y, parent_w, parent_h = parent_rect
+            if not (parent_x <= px < parent_x + parent_w and parent_y <= py < parent_y + parent_h):
+                continue  # pos isn't even within this panel's own region -- never claims
             hits = list(self._iter_interactive_with_rect(state.root, state.data, parent_rect))
             if not hits:
                 continue
@@ -708,3 +770,66 @@ class UIRuntime:
         if hit is not None:
             self._activate((hit[0], hit[1]))
         return claimed
+
+    def _iter_lists_with_rect(
+        self, widget: _WidgetNode, data: dict[str, Any], parent_rect: tuple[int, int, int, int]
+    ):
+        spec = widget.spec
+        if not _is_visible(spec, data):
+            return
+        rect = resolve_rect(spec, parent_rect)
+        node_type = spec.get("type")
+        if node_type in ("List", "Grid") and spec.get("item_template"):
+            yield (spec, data, rect)
+            # Still recurse into the currently-visible rows' own children
+            # (e.g. a List whose item_template is a Panel containing a
+            # nested List would need this) -- the common case (a bare
+            # Button/Label template) simply has no List/Grid descendants
+            # so this loop contributes nothing extra for it.
+            expanded, row_h, offset, visible_rows = self._visible_list_window(spec, data, rect)
+            x, y, w, _h = rect
+            for row, (item_widget, item_context) in enumerate(expanded[offset : offset + visible_rows]):
+                cell_rect = (x, y + row * row_h, w, row_h)
+                yield from self._iter_lists_with_rect(item_widget, item_context, cell_rect)
+            return
+        for child in widget.children:
+            yield from self._iter_lists_with_rect(child, data, rect)
+
+    def handle_mouse_scroll(self, pos: tuple[int, int], direction: int) -> bool:
+        """Mouse-wheel analogue of ``handle_mouse_click``/``handle_ui_input``:
+        finds the topmost panel (whose own rect contains ``pos``) that has
+        any scrollable List/Grid, and — if ``pos`` is over one of them —
+        moves that list's scroll offset by one row times ``direction``
+        (positive = toward later/newer items, matching a downward wheel
+        turn). Returns True if a panel with any list claimed the region
+        (same "claims the whole panel's footprint, whether or not this
+        exact wheel turn did anything" convention as
+        :meth:`_hit_test` — e.g. scrolling over empty space inside a
+        panel that also contains a list still shouldn't fall through to
+        the game world behind it)."""
+        px, py = pos
+        for panel_id in reversed(self._stack):
+            state = self._panels.get(panel_id)
+            if state is None or not _is_visible(state.root.spec, state.data):
+                continue
+            parent_rect = self._screen_rect_provider(bool(state.root.spec.get("full_screen")))
+            parent_x, parent_y, parent_w, parent_h = parent_rect
+            if not (parent_x <= px < parent_x + parent_w and parent_y <= py < parent_y + parent_h):
+                continue
+            lists_here = list(self._iter_lists_with_rect(state.root, state.data, parent_rect))
+            if not lists_here:
+                continue
+            for spec, _data, rect in lists_here:
+                rx, ry, rw, rh = rect
+                if rx <= px < rx + rw and ry <= py < ry + rh:
+                    template = spec.get("item_template")
+                    row_h = _rect_spec_of(template).get("h") or 32 if template else 32
+                    _x, _y, _w, h = rect
+                    visible_rows = max(1, h // row_h) if row_h else 1
+                    total = len(self._expand_items(spec, state.data))
+                    max_offset = max(0, total - visible_rows)
+                    current = self._scroll_offsets.get(id(spec), 0)
+                    self._scroll_offsets[id(spec)] = max(0, min(max_offset, current + direction))
+                    return True
+            return True
+        return False
