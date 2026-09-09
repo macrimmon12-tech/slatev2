@@ -76,7 +76,6 @@ NO_SUBSCRIBER_EXCEPTIONS = {
     "bonus_points_remaining": _NO_UI_SCREEN_BUILT_YET,
     "campaign_selected": _NO_UI_SCREEN_BUILT_YET,
     "load_game_selected": _NO_UI_SCREEN_BUILT_YET,
-    "save_slot_selected": _NO_UI_SCREEN_BUILT_YET,
     "entity_spawned": "real emitter (worldgen); AI/renderer both work by polling world.query(...) every turn/frame rather than caching from a spawn event, so no subscriber is actually needed today -- an architectural choice, not a gap",
     "item_pickup": "real emitter (inventory); no journal/UI has been authored yet to react to it",
     "item_dropped": "real emitter (inventory); no worldgen/loot re-pickup listener has been authored yet",

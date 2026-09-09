@@ -37,6 +37,23 @@ _warned_no_mixer: set[str] = set()
 _warned_config_missing: set[str] = set()
 
 
+def reset_module_state() -> None:
+    """Test-only convenience clearing this module's "permanent for the
+    life of the process" caches — mirrors ``engine.systems.worldgen``'s
+    own ``reset_module_state()`` (same docstring, same reason: real
+    gameplay code should never call this mid-run). Added because a real
+    ``AudioSystem.play()`` call in one test permanently poisons the
+    module-level missing-file cache for every *other* test in the same
+    pytest process that expects to exercise the same sound path fresh
+    (e.g. with ``pathlib.Path.exists`` patched to simulate the file
+    existing) — without a reset, whichever test runs first wins the
+    cache for the rest of the run."""
+    _missing_audio_cache.clear()
+    _warned_missing_audio.clear()
+    _warned_no_mixer.clear()
+    _warned_config_missing.clear()
+
+
 def _is_missing(resolved_path: Path) -> bool:
     """The one place this module checks the filesystem for a sound file.
     Cached forever per path -- see module docstring."""
@@ -74,6 +91,7 @@ class AudioSystem:
         self._event_sounds: dict[str, dict] = config.get("event_sounds", {}) or {}
 
         self._mixer_ok = self._init_mixer()
+        self._volume: float = 1.0  # live-play addition -- no component doc covers a volume control at all
 
         self._subscriptions: list[int] = []
         for event_name in self._event_sounds:
@@ -96,6 +114,17 @@ class AudioSystem:
 
     # -- public API (component doc §2.4) -------------------------------------
 
+    def set_volume(self, value: float) -> None:
+        """Master volume, ``0.0``-``1.0`` (clamped). Live-play addition —
+        no component doc specifies a volume control; applied per-``Sound``
+        at play time since ``pygame.mixer`` has no single global gain for
+        one-shot ``Sound`` playback (only for the separate music channel,
+        which this module doesn't use)."""
+        self._volume = max(0.0, min(1.0, value))
+
+    def get_volume(self) -> float:
+        return self._volume
+
     def play(self, sound_id: str, position: tuple[int, int] | None = None) -> None:
         """Play ``sound_id`` (a path relative to ``assets/``). ``position``
         is accepted for the documented signature/future positional-audio
@@ -110,6 +139,7 @@ class AudioSystem:
 
         try:
             sound = pygame.mixer.Sound(str(resolved_path))
+            sound.set_volume(self._volume)
             sound.play()
         except pygame.error:
             # Existed per the stat above but failed to load (corrupt/
@@ -162,4 +192,4 @@ class AudioSystem:
         self.play(sound_id, payload.get("position"))
 
 
-__all__ = ["AudioSystem"]
+__all__ = ["AudioSystem", "reset_module_state"]

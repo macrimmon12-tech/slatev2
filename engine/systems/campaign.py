@@ -108,6 +108,24 @@ class FloorManager:
     def current_floor_id(self) -> str | None:
         return self._current_floor_id
 
+    def restore_current_floor_id(self, floor_id: str | None) -> None:
+        """Load-game support (live game loop) — a loaded save's world
+        state doesn't include this bookkeeping (it lives on
+        ``FloorManager``, not in anything ``save.py`` serializes), so a
+        loader restores it explicitly rather than reaching into
+        ``_current_floor_id`` directly."""
+        self._current_floor_id = floor_id
+
+    def set_save_sink(self, save_sink: Callable[[dict], None] | None) -> None:
+        """Wire (or clear) the save-sink after construction — needed
+        because ``CampaignSystem`` builds its own default ``FloorManager``
+        with no way to pass one in from outside at the same time (see
+        this module's docstring, gap 2); a real save-to-disk caller
+        (the live game loop) constructs everything else first, then wires
+        this in via ``campaign_system.floor_manager.set_save_sink(...)``."""
+        self._save_sink = save_sink
+        self._warned_no_save_sink = False
+
     def transition_to(self, level_def: dict) -> None:
         floor_id = level_def["id"]
 
@@ -211,6 +229,10 @@ class CampaignSystem:
     @property
     def current_level_id(self) -> str | None:
         return self._current_level_id
+
+    @property
+    def campaign_id(self) -> str | None:
+        return self._campaign_id
 
     def load_campaign(self, campaign_id: str) -> None:
         """Loads ``campaign_id`` from the ``campaigns`` registry namespace

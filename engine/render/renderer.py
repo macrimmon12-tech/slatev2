@@ -198,8 +198,27 @@ class Renderer:
     def get_hud_rect(self) -> pygame.Rect:
         return self._hud_rect.copy()
 
+    def get_surface(self) -> pygame.Surface:
+        """The live window surface — for a caller (the live game loop)
+        that needs to draw something of its own on top after
+        :meth:`draw_frame` (e.g. ``TargetingOverlay``, which is
+        deliberately not a panel — see that module's docstring)."""
+        return self._window
+
     def get_viewport_rect(self) -> pygame.Rect:
         return self._viewport_rect.copy()
+
+    def pan_camera(self, dx: int, dy: int) -> None:
+        """Manual camera nudge, in tiles — live-play addition (no
+        component doc covers "let the player look around independent of
+        their own position" at all; camera movement was previously only
+        ever ``_recenter_camera``, driven by ``entity_moved``/
+        ``player_moved``). A pan is not sticky: the next real player move
+        recenters on the player again, exactly like a minimap "peek" in
+        most roguelikes — this method doesn't need its own "return to
+        following" mode because moving already provides one for free."""
+        ox, oy = self._camera_origin
+        self._camera_origin = (ox + dx, oy + dy)
 
     def world_to_screen(self, tile_pos: Position) -> tuple[int, int]:
         tx, ty = tile_pos
@@ -208,6 +227,19 @@ class Renderer:
             self._viewport_rect.x + (tx - ox) * self._tile_size,
             self._viewport_rect.y + (ty - oy) * self._tile_size,
         )
+
+    def screen_to_world(self, screen_pos: tuple[int, int]) -> Position | None:
+        """Inverse of :meth:`world_to_screen` — live-play addition for
+        mouse-driven spell targeting (no component doc covers this at
+        all). Returns ``None`` if ``screen_pos`` isn't within the tile
+        viewport (e.g. it's over the HUD strip)."""
+        if not self._viewport_rect.collidepoint(screen_pos):
+            return None
+        sx, sy = screen_pos
+        ox, oy = self._camera_origin
+        tile_x = ox + (sx - self._viewport_rect.x) // self._tile_size
+        tile_y = oy + (sy - self._viewport_rect.y) // self._tile_size
+        return (tile_x, tile_y)
 
     def set_tilemap(self, tilemap: Any) -> None:
         """Integration point for whoever owns floor transitions (see
