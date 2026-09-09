@@ -4,69 +4,127 @@
     "main_menu": {
       "type": "Panel",
       "id": "main_menu",
-      "rect": { "x": "center", "y": "center", "w": 400, "h": 320 },
+      "rect": { "x": "center", "y": "center", "w": 480, "h": 460 },
       "background": "panel_bg",
+      "border": "border",
       "children": [
         {
           "type": "Label",
           "text": "SLATE",
-          "rect": { "x": "center", "y": 20, "w": 400, "h": 40 },
+          "rect": { "x": "center", "y": 34, "w": 480, "h": 30 },
           "style": "title"
         },
         {
-          "type": "Button",
-          "id": "btn_new_game",
-          "text": "New Game",
-          "rect": { "x": "center", "y": 100, "w": 200, "h": 36 },
-          "on_click": { "event": "new_game_selected", "payload": { "campaign_id": null } }
+          "type": "Label",
+          "text": "A Dark Descent Into the Sunken Keep",
+          "rect": { "x": "center", "y": 68, "w": 480, "h": 20 },
+          "style": "subtitle"
         },
         {
-          "type": "Button",
-          "id": "btn_load_game",
-          "text": "Load Game",
-          "rect": { "x": "center", "y": 150, "w": 200, "h": 36 },
-          "on_click": { "event": "show_panel", "payload": { "panel_id": "save_select" } }
+          "type": "Panel",
+          "rect": { "x": "center", "y": 100, "w": 360, "h": 2 },
+          "background": "accent"
         },
         {
-          "type": "Button",
-          "id": "btn_quit",
-          "text": "Quit",
-          "rect": { "x": "center", "y": 200, "w": 200, "h": 36 },
-          "on_click": { "event": "quit_selected", "payload": {} }
+          "type": "Panel",
+          "id": "main_menu_buttons",
+          "rect": { "x": "center", "y": 130, "w": 340, "h": 224 },
+          "background": "panel_bg_alt",
+          "border": "border",
+          "children": [
+            {
+              "type": "Button",
+              "id": "btn_new_game",
+              "text": "New Game",
+              "rect": { "x": "center", "y": 26, "w": 270, "h": 44 },
+              "color": "button_primary_bg",
+              "hover_color": "button_primary_hover",
+              "text_style": "button_text",
+              "on_click": { "event": "new_game_selected", "payload": { "campaign_id": null } }
+            },
+            {
+              "type": "Button",
+              "id": "btn_load_game",
+              "text": "Load Game",
+              "rect": { "x": "center", "y": 90, "w": 270, "h": 44 },
+              "color": "button_bg",
+              "hover_color": "button_hover",
+              "text_style": "button_text",
+              "on_click": { "event": "show_panel", "payload": { "panel_id": "save_select" } }
+            },
+            {
+              "type": "Button",
+              "id": "btn_quit",
+              "text": "Quit",
+              "rect": { "x": "center", "y": 154, "w": 270, "h": 44 },
+              "color": "button_bg",
+              "hover_color": "button_hover",
+              "text_style": "text_dim",
+              "on_click": { "event": "quit_selected", "payload": {} }
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "text": "v0.1 · The Sunken Keep",
+          "rect": { "x": "center", "y": 432, "w": 480, "h": 18 },
+          "style": "text_dim"
         }
       ]
     },
     "save_select": {
       "type": "Panel",
       "id": "save_select",
-      "rect": { "x": "center", "y": "center", "w": 500, "h": 400 },
+      "rect": { "x": "center", "y": "center", "w": 520, "h": 440 },
       "background": "panel_bg",
+      "border": "border",
       "children": [
         {
           "type": "Label",
           "text": "Load Game",
-          "rect": { "x": "center", "y": 20, "w": 500, "h": 30 }
+          "rect": { "x": "center", "y": 20, "w": 520, "h": 26 },
+          "style": "title"
         },
         {
-          "type": "List",
-          "id": "save_list",
-          "items_key": "save_slots",
-          "rect": { "x": 20, "y": 60, "w": 460, "h": 300 },
-          "item_template": {
-            "type": "Button",
-            "text": "{{item.name}}",
-            "rect": { "x": 0, "y": 0, "w": 460, "h": 32 },
-            "on_click": {
-              "event": "save_slot_selected",
-              "payload": { "slot": "{{item.slot_id}}" }
+          "type": "Label",
+          "text": "Choose a save to continue",
+          "rect": { "x": "center", "y": 48, "w": 520, "h": 18 },
+          "style": "subtitle"
+        },
+        {
+          "type": "Panel",
+          "rect": { "x": 30, "y": 76, "w": 460, "h": 280 },
+          "background": "panel_bg_alt",
+          "border": "border",
+          "children": [
+            {
+              "type": "List",
+              "id": "save_list",
+              "items_key": "save_slots",
+              "rect": { "x": 6, "y": 6, "w": 448, "h": 268 },
+              "item_template": {
+                "type": "Button",
+                "text": "{{item.name}}",
+                "rect": { "x": 0, "y": 0, "w": 448, "h": 40 },
+                "color": "button_bg",
+                "hover_color": "button_hover",
+                "text_style": "button_text",
+                "on_click": {
+                  "event": "save_slot_selected",
+                  "payload": { "slot": "{{item.slot_id}}" }
+                }
+              }
             }
-          }
+          ]
         },
         {
           "type": "Button",
           "id": "btn_back",
           "text": "Back",
-          "rect": { "x": "center", "y": 360, "w": 150, "h": 32 },
+          "rect": { "x": "center", "y": 384, "w": 180, "h": 40 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "text_dim",
           "on_click": { "event": "show_panel", "payload": { "panel_id": "main_menu" } }
         }
       ]
@@ -76,22 +134,35 @@
       "id": "dialog",
       "rect": { "x": "center", "y": "center", "w": 600, "h": 360 },
       "background": "panel_bg",
+      "border": "border",
       "children": [
         {
-          "type": "Label",
-          "id": "dialog_text",
-          "text": "{{text}}",
-          "rect": { "x": 20, "y": 20, "w": 560, "h": 100 }
+          "type": "Panel",
+          "rect": { "x": 20, "y": 20, "w": 560, "h": 100 },
+          "background": "panel_bg_alt",
+          "border": "border",
+          "children": [
+            {
+              "type": "Label",
+              "id": "dialog_text",
+              "text": "{{text}}",
+              "rect": { "x": 12, "y": 10, "w": 536, "h": 80 },
+              "style": "text_default"
+            }
+          ]
         },
         {
           "type": "List",
           "id": "dialog_choices",
           "items_key": "choices",
-          "rect": { "x": 20, "y": 140, "w": 560, "h": 190 },
+          "rect": { "x": 20, "y": 134, "w": 560, "h": 196 },
           "item_template": {
             "type": "Button",
             "text": "{{item.text}}",
-            "rect": { "x": 0, "y": 0, "w": 560, "h": 32 },
+            "rect": { "x": 0, "y": 0, "w": 560, "h": 36 },
+            "color": "button_bg",
+            "hover_color": "button_hover",
+            "text_style": "button_text",
             "on_click": {
               "event": "dialog_choice_clicked",
               "payload": {
@@ -111,42 +182,121 @@
       "id": "shop",
       "rect": { "x": "center", "y": "center", "w": 640, "h": 420 },
       "background": "panel_bg",
+      "border": "border",
       "children": [
+        {
+          "type": "Label",
+          "text": "Shop",
+          "rect": { "x": 20, "y": 14, "w": 300, "h": 26 },
+          "style": "title"
+        },
         {
           "type": "Label",
           "id": "shop_gold_label",
           "text": "Gold: {{gold}}",
-          "rect": { "x": 20, "y": 16, "w": 300, "h": 24 }
+          "rect": { "x": 20, "y": 44, "w": 300, "h": 22 },
+          "style": "accent"
         },
         {
-          "type": "List",
-          "id": "shop_stock",
-          "items_key": "stock",
-          "rect": { "x": 20, "y": 50, "w": 600, "h": 300 },
-          "item_template": {
-            "type": "Button",
-            "text": "{{item.item_id}} x{{item.quantity}} - {{item.price}}g",
-            "rect": { "x": 0, "y": 0, "w": 600, "h": 32 },
-            "on_click": {
-              "event": "buy_item",
-              "payload": {
-                "entity_id": "{{entity_id}}",
-                "target_id": "{{target_id}}",
-                "shop_id": "{{shop_id}}",
-                "item": "{{item.item_id}}",
-                "price": "{{item.price}}"
+          "type": "Panel",
+          "rect": { "x": 20, "y": 74, "w": 600, "h": 276 },
+          "background": "panel_bg_alt",
+          "border": "border",
+          "children": [
+            {
+              "type": "List",
+              "id": "shop_stock",
+              "items_key": "stock",
+              "rect": { "x": 6, "y": 6, "w": 588, "h": 264 },
+              "item_template": {
+                "type": "Button",
+                "text": "{{item.item_id}} x{{item.quantity}} - {{item.price}}g",
+                "rect": { "x": 0, "y": 0, "w": 588, "h": 36 },
+                "color": "button_bg",
+                "hover_color": "button_hover",
+                "text_style": "button_text",
+                "on_click": {
+                  "event": "buy_item",
+                  "payload": {
+                    "entity_id": "{{entity_id}}",
+                    "target_id": "{{target_id}}",
+                    "shop_id": "{{shop_id}}",
+                    "item": "{{item.item_id}}",
+                    "price": "{{item.price}}"
+                  }
+                }
               }
             }
-          }
+          ]
         },
         {
           "type": "Button",
           "id": "btn_leave_shop",
           "text": "Leave",
-          "rect": { "x": "center", "y": 370, "w": 150, "h": 32 },
+          "rect": { "x": "center", "y": 366, "w": 160, "h": 38 },
+          "color": "button_bg",
+          "hover_color": "button_hover",
+          "text_style": "text_dim",
           "on_click": {
             "event": "shop_leave_clicked",
             "payload": { "entity_id": "{{entity_id}}", "shop_id": "{{shop_id}}" }
+          }
+        }
+      ]
+    },
+    "hud": {
+      "type": "Panel",
+      "id": "hud",
+      "full_screen": true,
+      "rect": { "anchor": "top_right", "x": 0, "y": 0, "w": 240 },
+      "background": "hud_bg",
+      "border": "border",
+      "children": [
+        {
+          "type": "Label",
+          "text": "SLATE",
+          "rect": { "x": "center", "y": 10, "w": 240, "h": 20 },
+          "style": "title"
+        },
+        {
+          "type": "Bar",
+          "value_key": "hp",
+          "max_key": "max_hp",
+          "label": "HP",
+          "rect": { "x": 12, "y": 40, "w": 216, "h": 22 },
+          "color": "hp_red",
+          "bg_color": "bar_track"
+        },
+        {
+          "type": "Bar",
+          "value_key": "mp",
+          "max_key": "max_mp",
+          "label": "MP",
+          "rect": { "x": 12, "y": 68, "w": 216, "h": 22 },
+          "color": "mp_blue",
+          "bg_color": "bar_track"
+        },
+        {
+          "type": "Panel",
+          "rect": { "x": 12, "y": 100, "w": 216, "h": 1 },
+          "background": "border"
+        },
+        {
+          "type": "Label",
+          "text": "Log",
+          "rect": { "x": 12, "y": 108, "w": 216, "h": 16 },
+          "style": "subtitle"
+        },
+        {
+          "type": "List",
+          "id": "hud_message_log",
+          "items_key": "messages",
+          "rect": { "x": 12, "y": 128, "w": 216, "h": 660 },
+          "item_template": {
+            "type": "Label",
+            "text": "{{item.text}}",
+            "rect": { "x": 0, "y": 0, "w": 216, "h": 18 },
+            "style": "text_dim"
           }
         }
       ]

@@ -111,6 +111,12 @@ def get_pygame_module() -> Any:
     return _pygame_module
 
 
+def _lighten(color: tuple[int, int, int], amount: int) -> tuple[int, int, int]:
+    """Auto-generated hover fill when a Button spec doesn't set its own
+    ``hover_color`` — clamped channel-wise so this never overflows/wraps."""
+    return tuple(min(255, channel + amount) for channel in color)  # type: ignore[return-value]
+
+
 def _default_screen_rect_provider(full_screen: bool) -> tuple[int, int, int, int]:
     # No renderer is wired yet (07-input-renderer-audio.md) so there is no
     # real screen size to report; a fixed placeholder keeps callers that
@@ -269,12 +275,33 @@ class UIRuntime:
         self._stack: list[str] = []  # panel_id, bottom -> top
         self._screen_templates: dict[str, dict[str, Any]] = {}
 
+        # Instance copy (not a class-attribute mutation) so multiple
+        # UIRuntime instances in the same process (e.g. tests) never leak
+        # config from one into another. Live-play visual polish fix: this
+        # used to be a hardcoded class dict that `data/config/ui_config.json`
+        # had zero effect on despite the file existing and every screen
+        # referencing its color names ("panel_bg", "title", "text_default",
+        # "hp_red") -- a "built but not wired" gap exactly like the ones
+        # CONTRACTS.md §7 exists to catch, just in the one place nothing
+        # was ever automatically re-verified against a running window.
+        # ui_config.json's colors now genuinely drive rendering; the
+        # hardcoded pairs below remain only as the fallback when no
+        # registry/config is available (tests, early boot).
+        self._STYLE_COLORS: dict[str, tuple[int, int, int]] = dict(self._STYLE_COLORS)
+
         if registry is not None:
             ui_skin_config = registry.get("configs", "ui_skin")
             if ui_skin_config:
                 self._screen_templates = dict(ui_skin_config.get("screens") or {})
 
+            ui_config = registry.get("configs", "ui_config")
+            if ui_config:
+                for key, value in (ui_config.get("colors") or {}).items():
+                    if isinstance(value, (list, tuple)) and len(value) == 3:
+                        self._STYLE_COLORS[key] = (int(value[0]), int(value[1]), int(value[2]))
+
         self._font: Any = None  # lazily created pygame.font.Font, or False if init failed
+        self._hover_spec: Any = None  # the exact spec dict of the currently-hovered interactive widget
 
         self._show_panel_token = event_bus.subscribe("show_panel", self._on_show_panel)
         # 15-integration-verification.md fix: 10-lua-scripting-layer.md's
@@ -370,10 +397,17 @@ class UIRuntime:
 
     # -- draw -------------------------------------------------------------
 
-    def draw(self, surface: Any) -> None:
+    def draw(self, surface: Any, mouse_pos: tuple[int, int] | None = None) -> None:
         """Draw every visible panel, bottom to top, onto ``surface``. A
         pure no-op (per widget, logged once) if pygame isn't installed —
-        see :func:`get_pygame_module`."""
+        see :func:`get_pygame_module`.
+
+        ``mouse_pos``, when given, updates which interactive widget (if
+        any) is hovered — purely visual (a lighter fill via
+        ``hover_color``/an auto-lightened ``color``); it never activates
+        anything by itself (that's :meth:`handle_mouse_click`'s job)."""
+        if mouse_pos is not None:
+            self._update_hover(mouse_pos)
         for panel_id in list(self._stack):
             state = self._panels.get(panel_id)
             if state is None:
@@ -469,29 +503,61 @@ class UIRuntime:
         if node_type == "Panel":
             color = self._color_for(spec.get("background"), (20, 20, 25))
             pygame_module.draw.rect(surface, color, pygame_module.Rect(x, y, w, h))
+            # Optional subtle border (visual-polish addition, additive
+            # field per the schema's own stated permissiveness about
+            # unknown keys — absent 'border' draws exactly as before).
+            border_key = spec.get("border")
+            if border_key:
+                border_color = self._color_for(border_key, (70, 70, 80))
+                pygame_module.draw.rect(surface, border_color, pygame_module.Rect(x, y, w, h), width=1)
         elif node_type == "Label":
-            self._blit_text(pygame_module, surface, str(_interpolate(spec.get("text", ""), data)), (x, y))
+            text_color = self._color_for(spec.get("style"), self._color_for("text_default", (230, 230, 230)))
+            self._blit_text(
+                pygame_module, surface, str(_interpolate(spec.get("text", ""), data)), (x, y), text_color
+            )
         elif node_type == "Bar":
             value = float(data.get(spec.get("value_key"), 0) or 0)
             max_value = float(data.get(spec.get("max_key"), 1) or 1)
             ratio = 0.0 if max_value <= 0 else max(0.0, min(1.0, value / max_value))
-            pygame_module.draw.rect(surface, (60, 60, 60), pygame_module.Rect(x, y, w, h))
+            track_color = self._color_for(spec.get("bg_color"), (60, 60, 60))
+            pygame_module.draw.rect(surface, track_color, pygame_module.Rect(x, y, w, h))
             fill_color = self._color_for(spec.get("color"), (200, 40, 40))
             pygame_module.draw.rect(surface, fill_color, pygame_module.Rect(x, y, int(w * ratio), h))
+            label = spec.get("label")
+            if label:
+                label_color = self._color_for("text_default", (230, 230, 230))
+                self._blit_text(pygame_module, surface, str(label), (x + 4, y), label_color)
         elif node_type == "Button":
-            pygame_module.draw.rect(surface, (50, 50, 60), pygame_module.Rect(x, y, w, h))
+            hovered = self._hover_spec is not None and spec is self._hover_spec
+            base_color = self._color_for(spec.get("color"), (50, 50, 60))
+            if hovered:
+                hover_key = spec.get("hover_color")
+                fill_color = (
+                    self._color_for(hover_key, base_color) if hover_key else _lighten(base_color, 24)
+                )
+            else:
+                fill_color = base_color
+            pygame_module.draw.rect(surface, fill_color, pygame_module.Rect(x, y, w, h))
             text = str(_interpolate(spec.get("text", ""), data))
-            self._blit_text(pygame_module, surface, text, (x + 4, y + 4))
+            text_color = self._color_for(spec.get("text_style"), self._color_for("text_default", (230, 230, 230)))
+            self._blit_text(pygame_module, surface, text, (x + 4, y + 4), text_color)
         # List/Grid are pure containers here — their items are drawn by
         # _draw_list_items, called separately by _draw_widget.
 
-    def _blit_text(self, pygame_module: Any, surface: Any, text: str, pos: tuple[int, int]) -> None:
+    def _blit_text(
+        self,
+        pygame_module: Any,
+        surface: Any,
+        text: str,
+        pos: tuple[int, int],
+        color: tuple[int, int, int] = (230, 230, 230),
+    ) -> None:
         if not text:
             return
         font = self._get_font(pygame_module)
         if font is None:
             return
-        surface.blit(font.render(text, True, (230, 230, 230)), pos)
+        surface.blit(font.render(text, True, color), pos)
 
     def _get_font(self, pygame_module: Any) -> Any:
         if self._font is None:
@@ -569,3 +635,76 @@ class UIRuntime:
             return
         payload = _interpolate_deep(on_click.get("payload") or {}, context)
         self._event_bus.emit(event, payload)
+
+    # -- mouse --------------------------------------------------------------
+    #
+    # No component doc specifies mouse handling (07/08 both only define a
+    # keyboard/gamepad `ui`-context action vocabulary — module docstring
+    # note 3). A real desktop window needs click-to-activate too, so this
+    # follows the same "topmost panel with any interactive widgets claims
+    # input" rule `handle_ui_input` already established, generalized to
+    # pixel coordinates instead of a focus index.
+
+    def _iter_interactive_with_rect(
+        self,
+        widget: _WidgetNode,
+        data: dict[str, Any],
+        parent_rect: tuple[int, int, int, int],
+    ):
+        spec = widget.spec
+        if not _is_visible(spec, data):
+            return
+        rect = resolve_rect(spec, parent_rect)
+        node_type = spec.get("type")
+        if node_type == "Button" and spec.get("on_click"):
+            yield (widget, data, rect)
+        for child in widget.children:
+            yield from self._iter_interactive_with_rect(child, data, rect)
+        if node_type in ("List", "Grid"):
+            x, y, w, _h = rect
+            template = spec.get("item_template")
+            if template:
+                row_h = _rect_spec_of(template).get("h") or 32
+                for index, (item_widget, item_context) in enumerate(self._expand_items(spec, data)):
+                    cell_rect = (x, y + index * row_h, w, row_h)
+                    yield from self._iter_interactive_with_rect(item_widget, item_context, cell_rect)
+
+    def _hit_test(
+        self, pos: tuple[int, int]
+    ) -> tuple[bool, tuple[_WidgetNode, dict[str, Any], tuple[int, int, int, int]] | None]:
+        """Returns ``(panel_claimed, hit)``. ``panel_claimed`` is True as
+        soon as the topmost panel with any interactive widgets is found,
+        even if ``pos`` misses every widget in it — mirrors
+        ``handle_ui_input``'s "topmost interactive panel owns input,
+        whether or not it does anything with this particular press"."""
+        px, py = pos
+        for panel_id in reversed(self._stack):
+            state = self._panels.get(panel_id)
+            if state is None or not _is_visible(state.root.spec, state.data):
+                continue
+            parent_rect = self._screen_rect_provider(bool(state.root.spec.get("full_screen")))
+            hits = list(self._iter_interactive_with_rect(state.root, state.data, parent_rect))
+            if not hits:
+                continue
+            for hit in hits:
+                _widget, _context, rect = hit
+                rx, ry, rw, rh = rect
+                if rx <= px < rx + rw and ry <= py < ry + rh:
+                    return True, hit
+            return True, None
+        return False, None
+
+    def _update_hover(self, pos: tuple[int, int]) -> None:
+        _claimed, hit = self._hit_test(pos)
+        self._hover_spec = hit[0].spec if hit is not None else None
+
+    def handle_mouse_click(self, pos: tuple[int, int]) -> bool:
+        """Click analogue of :meth:`handle_ui_input`. Returns True if a
+        panel with interactive widgets claimed the click (so a caller —
+        the game loop — knows not to also treat it as a game-world
+        click), regardless of whether the click landed on an actual
+        widget."""
+        claimed, hit = self._hit_test(pos)
+        if hit is not None:
+            self._activate((hit[0], hit[1]))
+        return claimed

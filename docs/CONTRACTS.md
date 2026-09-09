@@ -160,6 +160,7 @@ event.
 | `check_wake` | movement/noise | `entity_id, source_pos, radius` | AI |
 | `noise_emitted` | movement, combat, spells | `position, radius, source_id` | AI |
 | `resolve_hit` | combat (internal step, may be event or direct call — see `01-stats-combat.md`) | `attacker_id, defender_id` | combat pipeline |
+| `melee_attack_attempt` | input (bump-into-attackable-entity movement) | `attacker_id, target_id` | live game loop (`engine/game_loop.py`), calls `combat.resolve_hit` — added because no component doc covered "player bumps into a monster" at all; `InputHandler` still never decides whether the hit lands, matching its own stated boundary, the same shape as `entity_interacted`'s bump-into-NPC case |
 | `damage_dealt` | EffectResolver | `target_id, amount, damage_type, source_id, position` | renderer/anim, combat, quest hooks |
 | `miss` | combat | `attacker_id, defender_id` | renderer/anim, message log |
 | `death` | combat (pre-`entity_died`, XP-relevant) | `entity_id, killer_id, xp_value` | ProgressionSystem |
